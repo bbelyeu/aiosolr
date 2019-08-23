@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name="aiosolr",
-    version='0.0.1',
+    version='0.0.2',
     description="Lightweight Python client for Apache Solr",
 
     author="Brad Belyeu",
