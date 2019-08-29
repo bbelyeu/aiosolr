@@ -1,5 +1,4 @@
 aiohttp==3.5.4
-aiosolr==0.0.1
 async-timeout==3.0.1
 attrs==19.1.0
 bleach==3.1.0
