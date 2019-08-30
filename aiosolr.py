@@ -13,7 +13,7 @@ class SolrError(Exception):
 class Solr():
     """Class representing a connection to Solr."""
 
-    def __init__(self, scheme="http", host="127.0.0.1", port="80", collection=""):
+    def __init__(self, scheme="http", host="127.0.0.1", port="80", collection="", timeout=(1, 3)):
         """Init to instantiate Solr class.
 
         If the core/collection is not provided it should be passed to the methods as required.
@@ -21,6 +21,15 @@ class Solr():
         self.base_url = f"{scheme}://{host}:{port}/solr"
         self.collection = collection or None
         self.response_writer = "json"
+        if isinstance(tuple, timeout):
+            # In some cases you may want to set the
+            # connection timeout to 4 b/c of the TCP packet retransmission window
+            # http://docs.python-requests.org/en/master/user/advanced/#timeouts
+            # But in many cases that will be too slow
+            self.timeout = aiohttp.ClientTimeout(sock_connect=timeout[0], sock_read=timeout[1])
+        else:
+            self.timeout = aiohttp.ClientTimeout(total=timeout)
+        self.session = aiohttp.ClientSession(timeout=self.timeout)
 
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
@@ -30,10 +39,10 @@ class Solr():
 
     async def get(self, url):
         """Network request to get data from a server."""
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                response.body = await response.text()
-                return response
+        async with self.session.get(url) as response:
+            response.body = await response.text()
+        self.session.close()
+        return response
 
     async def suggestions(self, handler, query, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
