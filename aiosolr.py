@@ -18,9 +18,15 @@ class Solr():
 
         If the core/collection is not provided it should be passed to the methods as required.
         """
-        self.base_url = f"{scheme}://{host}:{port}/solr/{collection}"
-        if self.base_url[-1:] != "/":
-            self.base_url += "/"
+        self.base_url = f"{scheme}://{host}:{port}/solr"
+        self.collection = collection or None
+        self.response_writer = "json"
+
+    def _get_collection(self, kwargs):
+        """Get the collection name from the kwargs or instance variable."""
+        if not kwargs.get("collection") and not self.collection:
+            raise SolrError("Collection name not provided.")
+        return kwargs.get("collection") or self.collection
 
     async def get(self, url):
         """Network request to get data from a server."""
@@ -29,10 +35,12 @@ class Solr():
                 response.body = await response.text()
                 return response
 
-    async def suggestions(self, handler, query, collection="", **kwargs):
+    async def suggestions(self, handler, query, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
-        url = f"{self.base_url}{collection}/{handler}?suggest.q={query}&wt=json"
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?suggest.q={query}&wt={self.response_writer}"
         response = await self.get(url)
+
         if response.status == 200:
             data = json.loads(response.body)
             terms = []
@@ -42,9 +50,10 @@ class Solr():
         else:
             raise SolrError("%s", response.body)
 
-    async def query(self, handler, query, collection="", **kwargs):
+    async def query(self, handler, query, **kwargs):
         """Query a requestHandler of class SearchHandler."""
-        url = f"{self.base_url}{collection}/{handler}?q={query}&wt=json"
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         # TODO Think about if I should validate any query params in kwargs?
         for param, value in kwargs.items():
             url += f"&{param}={value}"
