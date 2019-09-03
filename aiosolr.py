@@ -21,7 +21,7 @@ class Solr():
         self.base_url = f"{scheme}://{host}:{port}/solr"
         self.collection = collection or None
         self.response_writer = "json"
-        if isinstance(tuple, timeout):
+        if isinstance(timeout, tuple):
             # In some cases you may want to set the
             # connection timeout to 4 b/c of the TCP packet retransmission window
             # http://docs.python-requests.org/en/master/user/advanced/#timeouts
