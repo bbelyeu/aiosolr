@@ -18,7 +18,7 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
         "Programming Language :: Python :: 3",
     ],
-    download_url='https://github.com/bbelyeu/aiosolr/archive/0.0.1.zip',
+    download_url='https://github.com/bbelyeu/aiosolr/archive/0.0.6.zip',
     install_requires=["aiohttp"],
     keywords=['solr', 'asyncio', 'aiohttp', 'search'],
     license="MIT",
