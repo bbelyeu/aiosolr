@@ -4,6 +4,8 @@ import json
 
 import aiohttp
 
+__version__ = '0.0.7'
+
 
 class SolrError(Exception):
     pass
@@ -41,7 +43,7 @@ class Solr():
         """Network request to get data from a server."""
         async with self.session.get(url) as response:
             response.body = await response.text()
-        self.session.close()
+        await self.session.close()
         return response
 
     async def suggestions(self, handler, query, **kwargs):
