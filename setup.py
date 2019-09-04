@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-from aiosolr import __version__
+__version__ = '0.0.8'
 
 
 setup(

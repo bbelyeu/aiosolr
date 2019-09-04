@@ -4,8 +4,6 @@ import json
 
 import aiohttp
 
-__version__ = '0.0.7'
-
 
 class SolrError(Exception):
     pass
