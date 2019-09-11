@@ -31,6 +31,9 @@ class Solr():
             self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.session = aiohttp.ClientSession(timeout=self.timeout)
 
+    def __del__(self):
+        await self.session.close()
+
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
         if not kwargs.get("collection") and not self.collection:
@@ -41,7 +44,6 @@ class Solr():
         """Network request to get data from a server."""
         async with self.session.get(url) as response:
             response.body = await response.text()
-        await self.session.close()
         return response
 
     async def suggestions(self, handler, query, **kwargs):
