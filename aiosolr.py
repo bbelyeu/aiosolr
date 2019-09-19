@@ -68,7 +68,10 @@ class Solr():
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         # TODO Think about if I should validate any query params in kwargs?
         for param, value in kwargs.items():
-            url += f"&{param}={value}"
+            if isinstance(value, list):
+                url += "&{}={}".format(param, ','.join(value))
+            else:
+                url += f"&{param}={value}"
         response = await self.get(url)
         if response.status == 200:
             data = json.loads(response.body)
