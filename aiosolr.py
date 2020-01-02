@@ -33,7 +33,8 @@ class Solr():
 
     def __del__(self):
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.session.close())
+        if loop and self.session:
+            loop.run_until_complete(self.session.close())
 
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
