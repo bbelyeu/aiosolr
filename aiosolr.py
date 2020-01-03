@@ -20,6 +20,7 @@ class Solr():
         """
         self.base_url = f"{scheme}://{host}:{port}/solr"
         self.collection = collection or None
+        self.loop = asyncio.get_event_loop()
         self.response_writer = "json"
         if isinstance(timeout, tuple):
             # In some cases you may want to set the
@@ -32,9 +33,8 @@ class Solr():
         self.session = aiohttp.ClientSession(timeout=self.timeout)
 
     def __del__(self):
-        loop = asyncio.get_event_loop()
-        if loop and self.session:
-            loop.run_until_complete(self.session.close())
+        if self.loop and self.session:
+            self.loop.run_until_complete(self.session.close())
 
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
