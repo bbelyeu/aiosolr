@@ -59,7 +59,7 @@ class Solr():
         else:
             raise SolrError("%s", response.body)
 
-    async def query(self, handler, query='*', **kwargs):
+    async def query(self, handler="select", query="*", **kwargs):
         """Query a requestHandler of class SearchHandler."""
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
