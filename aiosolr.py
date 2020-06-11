@@ -1,5 +1,4 @@
 """AIOSolr module."""
-import asyncio
 import json
 
 import aiohttp
@@ -20,7 +19,6 @@ class Solr():
         """
         self.base_url = f"{scheme}://{host}:{port}/solr"
         self.collection = collection or None
-        self.loop = asyncio.get_event_loop()
         self.response_writer = "json"
         if isinstance(timeout, tuple):
             # In some cases you may want to set the
