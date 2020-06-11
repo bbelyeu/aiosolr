@@ -101,10 +101,10 @@ class Solr():
         if response.status == 200:
             # TODO Handle types other than json
             if self.response_writer == "json":
-                data = json.loads(response.body)
+                response_body = json.loads(response.body)
             else:
-                data = response.body
+                response_body = response.body
         else:
             raise SolrError("%s", response.body)
 
-        return data["response"]["docs"]
+        return response_body
