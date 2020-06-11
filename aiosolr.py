@@ -44,6 +44,12 @@ class Solr():
             response.body = await response.text()
         return response
 
+    async def post(self, url, data):
+        """Network request to post data to a server."""
+        async with self.session.post(url, json=data) as response:
+            response.body = await response.text()
+        return response
+
     async def suggestions(self, handler, query, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
         collection = self._get_collection(kwargs)
@@ -69,9 +75,38 @@ class Solr():
                 url += "&{}={}".format(param, ','.join(value))
             else:
                 url += f"&{param}={value}"
+
         response = await self.get(url)
         if response.status == 200:
-            data = json.loads(response.body)
-            return data["response"]["docs"]
+            # TODO Handle types other than json
+            if self.response_writer == "json":
+                data = json.loads(response.body)
+            else:
+                data = response.body
         else:
             raise SolrError("%s", response.body)
+
+        return data["response"]["docs"]
+
+    async def update(self, data, handler="update", **kwargs):
+        """Update a document using Solr's update handler."""
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
+        # TODO Think about if I should validate any query params in kwargs?
+        for param, value in kwargs.items():
+            if isinstance(value, list):
+                url += "&{}={}".format(param, ','.join(value))
+            else:
+                url += f"&{param}={value}"
+
+        response = await self.post(url, data)
+        if response.status == 200:
+            # TODO Handle types other than json
+            if self.response_writer == "json":
+                data = json.loads(response.body)
+            else:
+                data = response.body
+        else:
+            raise SolrError("%s", response.body)
+
+        return data["response"]["docs"]
