@@ -30,11 +30,32 @@ class Solr():
             self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.session = aiohttp.ClientSession(timeout=self.timeout)
 
+    def _deserialize(self, response_body):
+        """Deserialize Solr response to Python object."""
+        # TODO Handle types other than json
+        if self.response_writer == "json":
+            data = json.loads(response_body)
+        else:
+            data = response_body
+        return data
+
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
         if not kwargs.get("collection") and not self.collection:
             raise SolrError("Collection name not provided.")
         return kwargs.get("collection") or self.collection
+
+    def _kwarg_to_query_string(self, kwargs):
+        """Convert kwarg arguments to Solr query string."""
+        # TODO Think about if I should validate any query params in kwargs?
+        query_string = ""
+        for param, value in kwargs.items():
+            if isinstance(value, list):
+                separator = "+" if param in ("qf",) else ","
+                query_string += "&{}={}".format(param, separator.join(value))
+            else:
+                query_string += f"&{param}={value}"
+        return query_string
 
     async def get(self, url):
         """Network request to get data from a server."""
@@ -55,7 +76,7 @@ class Solr():
         response = await self.get(url)
 
         if response.status == 200:
-            data = json.loads(response.body)
+            data = self._deserialize(response.body)
             terms = []
             for name in data["suggest"].keys():
                 terms += [s["term"] for s in data["suggest"][name][query]["suggestions"]]
@@ -67,20 +88,11 @@ class Solr():
         """Query a requestHandler of class SearchHandler."""
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
-        # TODO Think about if I should validate any query params in kwargs?
-        for param, value in kwargs.items():
-            if isinstance(value, list):
-                url += "&{}={}".format(param, ','.join(value))
-            else:
-                url += f"&{param}={value}"
+        url += self._kwarg_to_query_string(kwargs)
 
         response = await self.get(url)
         if response.status == 200:
-            # TODO Handle types other than json
-            if self.response_writer == "json":
-                data = json.loads(response.body)
-            else:
-                data = response.body
+            data = self._deserialize(response.body)
         else:
             raise SolrError("%s", response.body)
 
@@ -90,21 +102,12 @@ class Solr():
         """Update a document using Solr's update handler."""
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
-        # TODO Think about if I should validate any query params in kwargs?
-        for param, value in kwargs.items():
-            if isinstance(value, list):
-                url += "&{}={}".format(param, ','.join(value))
-            else:
-                url += f"&{param}={value}"
+        url += self._kwarg_to_query_string(kwargs)
 
         response = await self.post(url, data)
         if response.status == 200:
-            # TODO Handle types other than json
-            if self.response_writer == "json":
-                response_body = json.loads(response.body)
-            else:
-                response_body = response.body
+            data = self._deserialize(response.body)
         else:
             raise SolrError("%s", response.body)
 
-        return response_body
+        return data
