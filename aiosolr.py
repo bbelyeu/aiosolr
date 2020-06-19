@@ -57,6 +57,11 @@ class Solr():
                 query_string += f"&{param}={value}"
         return query_string
 
+    async def close(self):
+        """Close down Client Session."""
+        if self.session:
+            await self.session.close()
+
     async def get(self, url):
         """Network request to get data from a server."""
         async with self.session.get(url) as response:
