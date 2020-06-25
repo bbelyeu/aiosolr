@@ -39,6 +39,25 @@ class Solr():
             data = response_body
         return data
 
+    async def _get(self, url, headers={}):
+        """Network request to get data from a server."""
+        if "Content-Type" not in headers and self.response_writer == "json":
+            headers["Content-Type"] = "application/json"
+
+        async with self.session.get(url, headers=headers) as response:
+            response.body = await response.text()
+
+        return response
+
+    async def _get_check_ok_deserialize(self, url, headers={}):
+        """Get url, check status 200 and return deserialized data."""
+        response = await self._get(url, headers)
+
+        if response.status != 200:
+            raise SolrError("%s", response.body)
+
+        return self._deserialize(response.body)
+
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
         if not kwargs.get("collection") and not self.collection:
@@ -57,37 +76,41 @@ class Solr():
                 query_string += f"&{param}={value}"
         return query_string
 
-    async def close(self):
-        """Close down Client Session."""
-        if self.session:
-            await self.session.close()
-
-    async def get(self, url):
-        """Network request to get data from a server."""
-        async with self.session.get(url) as response:
-            response.body = await response.text()
-        return response
-
-    async def post(self, url, data):
+    async def _post(self, url, data):
         """Network request to post data to a server."""
         async with self.session.post(url, json=data) as response:
             response.body = await response.text()
         return response
 
+    async def close(self):
+        """Close down Client Session."""
+        if self.session:
+            await self.session.close()
+
+    async def commit(self, handler="update", soft=False, **kwargs):
+        """Perform a commit on the collection."""
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?"
+        url += "softCommit=true" if soft is True else "commit=true"
+        return await self._get_check_ok_deserialize(url)
+
+    async def get(self, _id, handler="get", **kwargs):
+        """Use Solr's built-in get handler to retrieve a single document by id."""
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?id={_id}wt={self.response_writer}"
+        url += self._kwarg_to_query_string(kwargs)
+        return await self._get_check_ok_deserialize(url)
+
     async def suggestions(self, handler, query, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?suggest.q={query}&wt={self.response_writer}"
-        response = await self.get(url)
+        data = await self._get_check_ok_deserialize(url)
 
-        if response.status == 200:
-            data = self._deserialize(response.body)
-            terms = []
-            for name in data["suggest"].keys():
-                terms += [s["term"] for s in data["suggest"][name][query]["suggestions"]]
-            return terms
-        else:
-            raise SolrError("%s", response.body)
+        terms = []
+        for name in data["suggest"].keys():
+            terms += [s["term"] for s in data["suggest"][name][query]["suggestions"]]
+        return terms
 
     async def query(self, handler="select", query="*", **kwargs):
         """Query a requestHandler of class SearchHandler."""
@@ -95,7 +118,7 @@ class Solr():
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
 
-        response = await self.get(url)
+        response = await self._get(url)
         if response.status == 200:
             data = self._deserialize(response.body)
         else:
@@ -109,7 +132,7 @@ class Solr():
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
 
-        response = await self.post(url, data)
+        response = await self._post(url, data)
         if response.status == 200:
             data = self._deserialize(response.body)
         else:
