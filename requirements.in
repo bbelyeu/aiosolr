@@ -1,0 +1,7 @@
+aiohttp
+black
+pdbpp
+pip-tools
+pudb
+pylint
+twine

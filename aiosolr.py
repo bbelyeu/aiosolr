@@ -9,10 +9,12 @@ class SolrError(Exception):
 
 
 # TODO Support something other than JSON
-class Solr():
+class Solr:
     """Class representing a connection to Solr."""
 
-    def __init__(self, scheme="http", host="127.0.0.1", port="80", collection="", timeout=(1, 3)):
+    def __init__(
+        self, scheme="http", host="127.0.0.1", port="80", collection="", timeout=(1, 3)
+    ):
         """Init to instantiate Solr class.
 
         If the core/collection is not provided it should be passed to the methods as required.
@@ -25,7 +27,9 @@ class Solr():
             # connection timeout to 4 b/c of the TCP packet retransmission window
             # http://docs.python-requests.org/en/master/user/advanced/#timeouts
             # But in many cases that will be too slow
-            self.timeout = aiohttp.ClientTimeout(sock_connect=timeout[0], sock_read=timeout[1])
+            self.timeout = aiohttp.ClientTimeout(
+                sock_connect=timeout[0], sock_read=timeout[1]
+            )
         else:
             self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.session = aiohttp.ClientSession(timeout=self.timeout)
@@ -97,7 +101,9 @@ class Solr():
     async def get(self, _id, handler="get", **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
         collection = self._get_collection(kwargs)
-        url = f"{self.base_url}/{collection}/{handler}?id={_id}wt={self.response_writer}"
+        url = (
+            f"{self.base_url}/{collection}/{handler}?id={_id}wt={self.response_writer}"
+        )
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
 
@@ -107,10 +113,13 @@ class Solr():
         url = f"{self.base_url}/{collection}/{handler}?suggest.q={query}&wt={self.response_writer}"
         data = await self._get_check_ok_deserialize(url)
 
-        terms = []
+        suggestions = []
         for name in data["suggest"].keys():
-            terms += [s["term"] for s in data["suggest"][name][query]["suggestions"]]
-        return terms
+            suggestions += [
+                {"match": s["term"], "payload": s["payload"]}
+                for s in data["suggest"][name][query]["suggestions"]
+            ]
+        return suggestions
 
     async def query(self, handler="select", query="*", **kwargs):
         """Query a requestHandler of class SearchHandler."""
