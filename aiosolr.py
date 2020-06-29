@@ -102,7 +102,7 @@ class Solr:
         """Use Solr's built-in get handler to retrieve a single document by id."""
         collection = self._get_collection(kwargs)
         url = (
-            f"{self.base_url}/{collection}/{handler}?id={_id}wt={self.response_writer}"
+            f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
         )
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
