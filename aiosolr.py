@@ -107,19 +107,28 @@ class Solr:
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
 
-    async def suggestions(self, handler, query, **kwargs):
+    async def suggestions(self, handler, query=None, build=False, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
+        if not query and not build:
+            return SolrError("query or build required for suggestions.")
+
         collection = self._get_collection(kwargs)
-        url = f"{self.base_url}/{collection}/{handler}?suggest.q={query}&wt={self.response_writer}"
+        url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
+        if query:
+            url += "&suggest.q={query}"
+        if build:
+            url += "&suggest.build=true"
         data = await self._get_check_ok_deserialize(url)
 
-        suggestions = []
-        for name in data["suggest"].keys():
-            suggestions += [
-                {"match": s["term"], "payload": s["payload"]}
-                for s in data["suggest"][name][query]["suggestions"]
-            ]
-        return suggestions
+        if query:
+            suggestions = []
+            for name in data["suggest"].keys():
+                suggestions += [
+                    {"match": s["term"], "payload": s["payload"]}
+                    for s in data["suggest"][name][query]["suggestions"]
+                ]
+            return suggestions
+        return data
 
     async def query(self, handler="select", query="*", **kwargs):
         """Query a requestHandler of class SearchHandler."""
