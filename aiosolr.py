@@ -115,7 +115,7 @@ class Solr:
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         if query:
-            url += "&suggest.q={query}"
+            url += f"&suggest.q={query}"
         if build:
             url += "&suggest.build=true"
         data = await self._get_check_ok_deserialize(url)
