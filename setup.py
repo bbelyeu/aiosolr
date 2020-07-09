@@ -6,7 +6,7 @@ from setuptools import setup
 if sys.version_info < (3, 6):
     sys.exit('Sorry, Python < 3.6 is not supported')
 
-__version__ = '2.1.1'
+__version__ = '2.2.0'
 
 setup(
     name="aiosolr",
@@ -24,7 +24,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     download_url=f"https://github.com/bbelyeu/aiosolr/archive/{__version__}.zip",
-    install_requires=["aiohttp"],
+    install_requires=["aiohttp", "bleach"],
     keywords=["solr", "asyncio", "aiohttp", "search"],
     license="MIT",
     long_description=open("README.md", "r").read(),

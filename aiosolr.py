@@ -1,7 +1,10 @@
 """AIOSolr module."""
+
 import json
+import re
 
 import aiohttp
+import bleach
 
 
 class SolrError(Exception):
@@ -85,6 +88,65 @@ class Solr:
         async with self.session.post(url, json=data) as response:
             response.body = await response.text()
         return response
+
+    @staticmethod
+    def _truncate_utf8(query, length, preserve_words=True):
+        """Truncate utf8 strings.
+
+        If applicable, remove isolated high surrogate code points at the end of
+        the string. If it's not already unicode we need to make it a unicode
+        string, but if it already is don't decode b/c it will throw UnicodeEncodeErrors.
+        """
+        if isinstance(query, bytes):
+            query = query.decode('utf-8')
+        # strip any whitespace first, that may be enough to get us under length
+        query = query.strip()
+        # Now measure actual length
+        original_len = len(query)
+        # Truncate if necessary
+        query = query[:length]
+        query = re.sub(u"[\ud800-\udbff]$", "", query)
+        # Now if we did truncate, and if we want to, preserve words
+        if original_len > len(query) and preserve_words:
+            query = query.rsplit(" ", 1)[0]
+        # Strip a final time in case truncating left whitespace on the end
+        return query.strip()
+
+    @staticmethod
+    def clean(
+        query,  # end user query
+        allow_html_tags=False,
+        allow_http=False,
+        allow_wildcard=False,
+        escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
+        max_len=200,
+        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\\*]',  # regex of chars to remove
+    ):
+        """Typical query cleaning."""
+        if not allow_http:
+            query = re.sub(r"http\S+", "", query)
+
+        # Remove these chars
+        query = re.sub(remove_chars, "", query)
+
+        if not allow_wildcard:
+            # Also remove urlencoded wildcard (*)
+            query = query.lower().replace("%2a", "")
+
+        if escape_chars:
+            # Escape these chars
+            query = re.sub(escape_chars[0], escape_chars[1], query)
+
+        if not allow_html_tags:
+            # bleach it to prevent JS injection or other unwanted html
+            # when displaying the query back to the user in a web page
+            query = bleach.clean(query, strip=True)
+
+        if max_len:
+            # Queries that are too long can cause performance issues
+            query = Solr._truncate_utf8(query, max_len)
+
+        return query
 
     async def close(self):
         """Close down Client Session."""
