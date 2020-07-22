@@ -192,10 +192,14 @@ class Solr:
             return suggestions
         return data
 
-    async def query(self, handler="select", query="*", **kwargs):
+    async def query(self, handler="select", query="*", spellcheck=False, **kwargs):
         """Query a requestHandler of class SearchHandler."""
+        # TODO Add a query object to return so we can return a single type
+        # instead of a tuple in one case and a list in another
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
+        if spellcheck:
+            url += "&spellcheck=on"
         url += self._kwarg_to_query_string(kwargs)
 
         response = await self._get(url)
@@ -204,7 +208,14 @@ class Solr:
         else:
             raise SolrError("%s", response.body)
 
-        return data["response"]["docs"]
+        if spellcheck:
+            suggestions = []
+            for sugg in data.get("spellcheck", {}).get("suggestions", []):
+                if isinstance(sugg, dict) and "suggestion" in sugg:
+                    suggestions += sugg["suggestion"]
+            return data["response"]["docs"], suggestions
+        else:
+            return data["response"]["docs"]
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""

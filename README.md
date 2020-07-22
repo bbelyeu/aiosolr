@@ -42,8 +42,13 @@ You can also use the suggestions method to build your suggestions like:
 *Note: handler is a required argument for suggestions unlike for get or query*
 
 You can use the *query* method to query your search handler. The default handler used is "select".
+If you would like spellcheck suggestion turned on, pass *spellcheck=True* (default is False).
 
-    solr.query(handler="my_handler", query="asdf")
+    solr.query(handler="my_handler", query="asdf", spellcheck=True)
+
+If *spellcheck* is *True* the query method returns a tuple with the first element being
+an array of documents and the 2nd element being an array of spellcheck suggestions.
+Otherwise, the query method returns a simple array of documents.
 
 You can use the *update* method to access Solr's built-in update handler like:
 
