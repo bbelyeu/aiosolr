@@ -98,14 +98,14 @@ class Solr:
         string, but if it already is don't decode b/c it will throw UnicodeEncodeErrors.
         """
         if isinstance(query, bytes):
-            query = query.decode('utf-8')
+            query = query.decode("utf-8")
         # strip any whitespace first, that may be enough to get us under length
         query = query.strip()
         # Now measure actual length
         original_len = len(query)
         # Truncate if necessary
         query = query[:length]
-        query = re.sub(u"[\ud800-\udbff]$", "", query)
+        query = re.sub("[\ud800-\udbff]$", "", query)
         # Now if we did truncate, and if we want to, preserve words
         if original_len > len(query) and preserve_words:
             query = query.rsplit(" ", 1)[0]
@@ -192,7 +192,14 @@ class Solr:
             return suggestions
         return data
 
-    async def query(self, handler="select", query="*", spellcheck=False, **kwargs):
+    async def query(
+        self,
+        handler="select",
+        query="*",
+        spellcheck=False,
+        spellcheck_dicts=[],
+        **kwargs,
+    ):
         """Query a requestHandler of class SearchHandler."""
         # TODO Add a query object to return so we can return a single type
         # instead of a tuple in one case and a list in another
@@ -200,6 +207,9 @@ class Solr:
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
             url += "&spellcheck=on"
+            for spellcheck_dict in spellcheck_dicts:
+                # Solr allows the same url query param multiple times... go figure?
+                url += f"&spellcheck.dictionary={spellcheck_dict}"
         url += self._kwarg_to_query_string(kwargs)
 
         response = await self._get(url)
