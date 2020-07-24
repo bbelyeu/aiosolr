@@ -183,6 +183,8 @@ class Solr:
         data = await self._get_check_ok_deserialize(url)
 
         if query:
+            if "+" in query:
+                query = query.replace("+", " ")
             suggestions = []
             for name in data["suggest"].keys():
                 suggestions += [
