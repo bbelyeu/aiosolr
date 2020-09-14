@@ -187,10 +187,13 @@ class Solr:
                 query = query.replace("+", " ")
             suggestions = []
             for name in data["suggest"].keys():
-                suggestions += [
-                    {"match": s["term"], "payload": s["payload"]}
-                    for s in data["suggest"][name][query]["suggestions"]
-                ]
+                try:
+                    suggestions += [
+                        {"match": s["term"], "payload": s["payload"]}
+                        for s in data["suggest"][name][query]["suggestions"]
+                    ]
+                except KeyError:
+                    pass
             return suggestions
         return data
 
