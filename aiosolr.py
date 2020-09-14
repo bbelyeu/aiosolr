@@ -23,7 +23,7 @@ class Solr:
         collection="",
         timeout=(1, 3),
         ttl_dns_cache=3600,
-        trace_configs=None,
+        trace_configs=[],
     ):
         """Init to instantiate Solr class.
 
