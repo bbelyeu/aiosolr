@@ -16,11 +16,21 @@ class Solr:
     """Class representing a connection to Solr."""
 
     def __init__(
-        self, scheme="http", host="127.0.0.1", port="80", collection="", timeout=(1, 3)
+        self,
+        scheme="http",
+        host="127.0.0.1",
+        port="80",
+        collection="",
+        timeout=(1, 3),
+        ttl_dns_cache=3600,
+        trace_configs=None,
     ):
         """Init to instantiate Solr class.
 
         If the core/collection is not provided it should be passed to the methods as required.
+        timeout, ttl_dns_cache, and trace_configs arguments are setup and sent to the
+        AIOHTTP ClientSession class.
+        See: https://docs.aiohttp.org/en/stable/client_reference.html
         """
         self.base_url = f"{scheme}://{host}:{port}/solr"
         self.collection = collection or None
@@ -35,7 +45,12 @@ class Solr:
             )
         else:
             self.timeout = aiohttp.ClientTimeout(total=timeout)
-        self.session = aiohttp.ClientSession(timeout=self.timeout)
+
+        # How long to cache DNS lookups - defaulting to an hour
+        tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=ttl_dns_cache)
+        self.session = aiohttp.ClientSession(
+            connector=tcp_conn, timeout=self.timeout, trace_configs=trace_configs
+        )
 
     def _deserialize(self, response_body):
         """Deserialize Solr response to Python object."""
