@@ -135,7 +135,7 @@ class Solr:
         allow_wildcard=False,
         escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
         max_len=200,
-        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\\*;]',  # regex of chars to remove
+        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',  # regex of chars to remove
     ):
         """Typical query cleaning."""
         if not allow_http:
@@ -145,6 +145,7 @@ class Solr:
         query = re.sub(remove_chars, "", query)
 
         if not allow_wildcard:
+            query = query.lower().replace("*", "")
             # Also remove urlencoded wildcard (*)
             query = query.lower().replace("%2a", "")
 
