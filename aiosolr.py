@@ -145,9 +145,9 @@ class Solr:
         query = re.sub(remove_chars, "", query)
 
         if not allow_wildcard:
-            query = query.lower().replace("*", "")
+            query = query.replace("*", "")
             # Also remove urlencoded wildcard (*)
-            query = query.lower().replace("%2a", "")
+            query = query.replace("%2a", "")
 
         if escape_chars:
             # Escape these chars
