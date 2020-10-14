@@ -227,10 +227,18 @@ class Solr:
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
-            url += "&spellcheck=on"
+            url += "&spellcheck=true"
+
+            # Docs state the default SpellingQueryConverter class only handles ASCII so we
+            # need to specify spellcheck.q for Unicode support
+            # https://lucene.apache.org/solr/guide/8_6/spell-checking.html
+            if "spellcheck.q" not in kwargs:
+                url += f"&spellcheck.q={query}"
+
             for spellcheck_dict in spellcheck_dicts:
                 # Solr allows the same url query param multiple times... go figure?
                 url += f"&spellcheck.dictionary={spellcheck_dict}"
+
         url += self._kwarg_to_query_string(kwargs)
 
         response = await self._get(url)
