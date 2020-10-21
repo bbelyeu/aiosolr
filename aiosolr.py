@@ -252,16 +252,19 @@ class Solr:
             spellcheck = data.get("spellcheck", {})
 
             # Collations returns a list of strings with the first element set to "collations"
-            if "collations" in spellcheck and isinstance(spellcheck["collations"], list) and len(spellcheck["collations"]) > 1:
+            if (
+                "collations" in spellcheck
+                and isinstance(spellcheck["collations"], list)
+                and len(spellcheck["collations"]) > 1
+            ):
                 suggestions.append(spellcheck["collations"][1])
 
-            for sugg in spellcheck.get("suggestions", []):
-                if (
-                    isinstance(sugg, dict)
-                    and "suggestion" in sugg
-                    and sugg["suggestion"] not in suggestions
-                ):
-                    suggestions += sugg["suggestion"]
+            # First element is the original query, 2nd element should be a dict of suggestions
+            for solr_suggs in spellcheck.get("suggestions", []):
+                if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
+                    for sugg in solr_suggs["suggestion"]:
+                        if sugg not in suggestions:
+                            suggestions.append(sugg)
 
             return data["response"]["docs"], suggestions
 
