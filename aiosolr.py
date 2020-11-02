@@ -90,12 +90,21 @@ class Solr:
         """Convert kwarg arguments to Solr query string."""
         # TODO Think about if I should validate any query params in kwargs?
         query_string = ""
+
+        # fq param accepted multiple times in URL
+        # https://lucene.apache.org/solr/guide/8_6/common-query-parameters.html
+        if "fq" in kwargs and isinstance(kwargs.get("fq"), list):
+            fqs = kwargs.pop("fq")
+            for _fq in fqs:
+                query_string += f"&fq={_fq}"
+
         for param, value in kwargs.items():
             if isinstance(value, list):
                 separator = "+" if param in ("qf",) else ","
                 query_string += "&{}={}".format(param, separator.join(value))
             else:
                 query_string += f"&{param}={value}"
+
         return query_string
 
     async def _post(self, url, data):
