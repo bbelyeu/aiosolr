@@ -8,7 +8,10 @@ import bleach
 
 
 class SolrError(Exception):
-    pass
+    """Base class for exceptions in this module."""
+    def __init__(self, message, trace=None):
+        self.message = message
+        self.trace = trace
 
 
 # TODO Support something other than JSON
@@ -76,7 +79,15 @@ class Solr:
         response = await self._get(url, headers)
 
         if response.status != 200:
-            raise SolrError("%s", response.body)
+            msg, trace = None, None
+            try:
+                error = self._deserialize(response.body)
+                msg = error.get("error", {}).get("msg", error)
+                trace = error.get("error", {}).get("trace")
+            except BaseException:
+                msg = str(response.body)
+
+            raise SolrError(msg, trace)
 
         return self._deserialize(response.body)
 
@@ -254,7 +265,15 @@ class Solr:
         if response.status == 200:
             data = self._deserialize(response.body)
         else:
-            raise SolrError("%s", response.body)
+            msg, trace = None, None
+            try:
+                error = self._deserialize(response.body)
+                msg = error.get("error", {}).get("msg", error)
+                trace = error.get("error", {}).get("trace")
+            except BaseException:
+                msg = str(response.body)
+
+            raise SolrError(msg, trace)
 
         if spellcheck:
             suggestions = []
@@ -290,6 +309,14 @@ class Solr:
         if response.status == 200:
             data = self._deserialize(response.body)
         else:
-            raise SolrError("%s", response.body)
+            msg, trace = None, None
+            try:
+                error = self._deserialize(response.body)
+                msg = error.get("error", {}).get("msg", error)
+                trace = error.get("error", {}).get("trace")
+            except BaseException:
+                msg = str(response.body)
+
+            raise SolrError(msg, trace)
 
         return data
