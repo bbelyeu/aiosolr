@@ -14,6 +14,31 @@ class SolrError(Exception):
         self.trace = trace
 
 
+class Response:
+    """Response class."""
+    def __init__(self, data):
+        self.data = data
+        self.doc = data.get("doc", {})
+        self.docs = data.get("response", {}).get("docs", [])
+        self.suggestions = []
+
+        spellcheck = data.get("spellcheck", {})
+        # Collations returns a list of strings with the first element set to "collations"
+        if (
+            "collations" in spellcheck
+            and isinstance(spellcheck["collations"], list)
+            and len(spellcheck["collations"]) > 1
+        ):
+            self.suggestions.append(spellcheck["collations"][1])
+
+        # First element is the original query, 2nd element should be a dict of suggestions
+        for solr_suggs in spellcheck.get("suggestions", []):
+            if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
+                for sugg in solr_suggs["suggestion"]:
+                    if sugg not in self.suggestions:
+                        self.suggestions.append(sugg)
+
+
 # TODO Support something other than JSON
 class Solr:
     """Class representing a connection to Solr."""
@@ -62,7 +87,7 @@ class Solr:
             data = json.loads(response_body)
         else:
             data = response_body
-        return data
+        return Response(data)
 
     async def _get(self, url, headers={}):
         """Network request to get data from a server."""
@@ -102,12 +127,18 @@ class Solr:
         # TODO Think about if I should validate any query params in kwargs?
         query_string = ""
 
-        # fq param accepted multiple times in URL
+        # fq param accepted multiple times in URL query string
         # https://lucene.apache.org/solr/guide/8_6/common-query-parameters.html
         if "fq" in kwargs and isinstance(kwargs.get("fq"), list):
             fqs = kwargs.pop("fq")
             for _fq in fqs:
                 query_string += f"&fq={_fq}"
+
+        # facet.field param accepted multiple times in URL query string
+        if "facet.field" in kwargs and isinstance(kwargs.get("facet.field"), list):
+            ffields = kwargs.pop("facet.field")
+            for _ff in ffields:
+                query_string += f"&facet.field={_ff}"
 
         for param, value in kwargs.items():
             if isinstance(value, list):
@@ -216,22 +247,22 @@ class Solr:
             url += f"&suggest.q={query}"
         if build:
             url += "&suggest.build=true"
-        data = await self._get_check_ok_deserialize(url)
+        response = await self._get_check_ok_deserialize(url)
 
         if query:
             if "+" in query:
                 query = query.replace("+", " ")
             suggestions = []
-            for name in data["suggest"].keys():
+            for name in response.data["suggest"].keys():
                 try:
                     suggestions += [
                         {"match": s["term"], "payload": s["payload"]}
-                        for s in data["suggest"][name][query]["suggestions"]
+                        for s in response.data["suggest"][name][query]["suggestions"]
                     ]
                 except KeyError:
                     pass
             return suggestions
-        return data
+        return response.data
 
     async def query(
         self,
@@ -242,8 +273,6 @@ class Solr:
         **kwargs,
     ):
         """Query a requestHandler of class SearchHandler."""
-        # TODO Add a query object to return so we can return a single type
-        # instead of a tuple in one case and a list in another
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
@@ -261,43 +290,19 @@ class Solr:
 
         url += self._kwarg_to_query_string(kwargs)
 
-        response = await self._get(url)
-        if response.status == 200:
-            data = self._deserialize(response.body)
-        else:
+        solr_response = await self._get(url)
+        if solr_response.status != 200:
             msg, trace = None, None
             try:
-                error = self._deserialize(response.body)
+                error = self._deserialize(solr_response.body)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
             except BaseException:
-                msg = str(response.body)
+                msg = str(solr_response.body)
 
             raise SolrError(msg, trace)
 
-        if spellcheck:
-            suggestions = []
-            spellcheck = data.get("spellcheck", {})
-
-            # Collations returns a list of strings with the first element set to "collations"
-            if (
-                "collations" in spellcheck
-                and isinstance(spellcheck["collations"], list)
-                and len(spellcheck["collations"]) > 1
-            ):
-                suggestions.append(spellcheck["collations"][1])
-
-            # First element is the original query, 2nd element should be a dict of suggestions
-            for solr_suggs in spellcheck.get("suggestions", []):
-                if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
-                    for sugg in solr_suggs["suggestion"]:
-                        if sugg not in suggestions:
-                            suggestions.append(sugg)
-
-            return data["response"]["docs"], suggestions
-
-        else:
-            return data["response"]["docs"]
+        return self._deserialize(solr_response.body)
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""
