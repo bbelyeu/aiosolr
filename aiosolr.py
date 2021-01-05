@@ -16,10 +16,11 @@ class SolrError(Exception):
 
 class Response:
     """Response class."""
-    def __init__(self, data):
+    def __init__(self, data, status):
         self.data = data
         self.doc = data.get("doc", {})
         self.docs = data.get("response", {}).get("docs", [])
+        self.status = status
         self.suggestions = []
 
         spellcheck = data.get("spellcheck", {})
@@ -80,14 +81,14 @@ class Solr:
             connector=tcp_conn, timeout=self.timeout, trace_configs=trace_configs
         )
 
-    def _deserialize(self, response_body):
+    def _deserialize(self, resp):
         """Deserialize Solr response to Python object."""
         # TODO Handle types other than json
         if self.response_writer == "json":
-            data = json.loads(response_body)
+            data = json.loads(resp.body)
         else:
-            data = response_body
-        return Response(data)
+            data = resp.body
+        return Response(data, resp.status)
 
     async def _get(self, url, headers={}):
         """Network request to get data from a server."""
@@ -106,7 +107,7 @@ class Solr:
         if response.status != 200:
             msg, trace = None, None
             try:
-                error = self._deserialize(response.body)
+                error = self._deserialize(response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
             except BaseException:
@@ -114,7 +115,7 @@ class Solr:
 
             raise SolrError(msg, trace)
 
-        return self._deserialize(response.body)
+        return self._deserialize(response)
 
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
@@ -294,7 +295,7 @@ class Solr:
         if solr_response.status != 200:
             msg, trace = None, None
             try:
-                error = self._deserialize(solr_response.body)
+                error = self._deserialize(solr_response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
             except BaseException:
@@ -302,7 +303,7 @@ class Solr:
 
             raise SolrError(msg, trace)
 
-        return self._deserialize(solr_response.body)
+        return self._deserialize(solr_response)
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""
@@ -312,11 +313,11 @@ class Solr:
 
         response = await self._post(url, data)
         if response.status == 200:
-            data = self._deserialize(response.body)
+            data = self._deserialize(response)
         else:
             msg, trace = None, None
             try:
-                error = self._deserialize(response.body)
+                error = self._deserialize(response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
             except BaseException:
