@@ -141,6 +141,12 @@ class Solr:
             for _ff in ffields:
                 query_string += f"&facet.field={_ff}"
 
+        # boost param accepted multiple times in URL query string
+        if "boost" in kwargs and isinstance(kwargs.get("boost"), list):
+            boost_fields = kwargs.pop("boost")
+            for _bf in boost_fields:
+                query_string += f"&boost={_bf}"
+
         for param, value in kwargs.items():
             if isinstance(value, list):
                 separator = "+" if param in ("qf",) else ","
