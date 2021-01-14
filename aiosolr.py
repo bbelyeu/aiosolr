@@ -6,9 +6,12 @@ import re
 import aiohttp
 import bleach
 
+from urllib.parse import urlparse
+
 
 class SolrError(Exception):
     """Base class for exceptions in this module."""
+
     def __init__(self, message, trace=None):
         self.message = message
         self.trace = trace
@@ -16,6 +19,7 @@ class SolrError(Exception):
 
 class Response:
     """Response class."""
+
     def __init__(self, data, status):
         self.data = data
         self.doc = data.get("doc", {})
@@ -53,6 +57,7 @@ class Solr:
         timeout=(1, 3),
         ttl_dns_cache=3600,
         trace_configs=[],
+        connection_url=None
     ):
         """Init to instantiate Solr class.
 
@@ -61,8 +66,15 @@ class Solr:
         AIOHTTP ClientSession class.
         See: https://docs.aiohttp.org/en/stable/client_reference.html
         """
-        self.base_url = f"{scheme}://{host}:{port}/solr"
-        self.collection = collection or None
+        if connection_url is None:
+            self.base_url = f"{scheme}://{host}:{port}/solr"
+            self.collection = collection or None
+        else:
+            url = urlparse(connection_url)
+            base_path, collection = url.path.rsplit('/', 1)
+            self.base_url = f"{url.scheme}://{url.netloc}/{base_path}"
+            self.collection = collection or None
+        
         self.response_writer = "json"
         if isinstance(timeout, tuple):
             # In some cases you may want to set the
@@ -193,7 +205,8 @@ class Solr:
         allow_wildcard=False,
         escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
         max_len=200,
-        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',  # regex of chars to remove
+        # regex of chars to remove
+        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
     ):
         """Typical query cleaning."""
         if not allow_http:
