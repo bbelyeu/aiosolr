@@ -33,24 +33,24 @@ Once you have your *Solr* instance, there are methods available for querying.
 
 You can use Solr's built-in get handler with the *get* method like:
 
-    solr.get(document_id)
+    client.get(document_id)
 
 to retrieve a single document.
 
 You can use a pre-defined suggestions handler by using the *suggestions* method like:
 
-    solr.suggestions("suggest_handler", query="asdf")
+    client.suggestions("suggest_handler", query="asdf")
 
 You can also use the suggestions method to build your suggestions like:
 
-    solr.suggestions("suggest_handler", build=True)
+    client.suggestions("suggest_handler", build=True)
 
 *Note: handler is a required argument for suggestions unlike for get or query*
 
 You can use the *query* method to query your search handler. The default handler used is "select".
 If you would like spellcheck suggestion turned on, pass *spellcheck=True* (default is False).
 
-    solr.query(handler="my_handler", query="asdf", spellcheck=True)
+    client.query(handler="my_handler", query="asdf", spellcheck=True)
 
 If *spellcheck* is *True* the query method returns a tuple with the first element being
 an array of documents and the 2nd element being an array of spellcheck suggestions.
@@ -58,7 +58,7 @@ Otherwise, the query method returns a simple array of documents.
 
 You can use the *update* method to access Solr's built-in update handler like:
 
-    solr.update(my_data)
+    client.update(my_data)
 
 At any point that you need to commit data to your collection you can use the *commit* method.
 Arguments should be the "handler" ("update" by default) and "soft" as a boolean indicating
@@ -76,10 +76,11 @@ used to strip out unwanted characters. The function signature allows the followi
         allow_wildcard=False,
         escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
         max_len=200,
-        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\\*]',  # regex of chars to remove
+        # regex of chars to remove
+        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
     ):
 
 Once you are finished with the Solr instance, you should call the method *close* to cleanup
 sessions like:
 
-    await solr.close()
+    await client.close()
