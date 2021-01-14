@@ -72,7 +72,7 @@ class Solr:
         else:
             url = urlparse(connection_url)
             base_path, collection = url.path.rsplit('/', 1)
-            self.base_url = f"{url.scheme}://{url.netloc}/{base_path}"
+            self.base_url = f"{url.scheme}://{url.netloc}{base_path}"
             self.collection = collection or None
         
         self.response_writer = "json"
