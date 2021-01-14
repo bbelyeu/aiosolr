@@ -57,7 +57,7 @@ class Solr:
         timeout=(1, 3),
         ttl_dns_cache=3600,
         trace_configs=[],
-        connection_url=None
+        connection_url=None,
     ):
         """Init to instantiate Solr class.
 
@@ -71,10 +71,10 @@ class Solr:
             self.collection = collection or None
         else:
             url = urlparse(connection_url)
-            base_path, collection = url.path.rsplit('/', 1)
+            base_path, collection = url.path.rsplit("/", 1)
             self.base_url = f"{url.scheme}://{url.netloc}{base_path}"
             self.collection = collection or None
-        
+
         self.response_writer = "json"
         if isinstance(timeout, tuple):
             # In some cases you may want to set the
