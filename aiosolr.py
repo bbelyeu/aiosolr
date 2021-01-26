@@ -24,6 +24,10 @@ class Response:
         self.data = data
         self.doc = data.get("doc", {})
         self.docs = data.get("response", {}).get("docs", [])
+        mlt_data = data.get("moreLikeThis", {})
+        if mlt_data:
+            mlt_data_key = mlt_data.keys()[0]
+            self.more_like_this = mlt_data[mlt_data_key].get("docs", [])
         self.status = status
         self.suggestions = []
 
