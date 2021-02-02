@@ -5,45 +5,109 @@
 #    pip-compile --no-emit-trusted-host --no-index requirements.in
 #
 aiohttp==3.5.4
-appdirs==1.4.4            # via black
-astroid==2.4.2            # via pylint
-async-timeout==3.0.1      # via aiohttp
-attrs==19.1.0             # via aiohttp, black
+    # via -r requirements.in
+appdirs==1.4.4
+    # via black
+astroid==2.4.2
+    # via pylint
+async-timeout==3.0.1
+    # via aiohttp
+attrs==19.1.0
+    # via
+    #   aiohttp
+    #   black
 black==19.10b0
-bleach==3.1.4             # via readme-renderer
-certifi==2019.6.16        # via requests
-chardet==3.0.4            # via aiohttp, requests
-click==7.1.2              # via black, pip-tools
-docutils==0.15.2          # via readme-renderer
-fancycompleter==0.8       # via pdbpp
-idna==2.8                 # via requests, yarl
-isort==4.3.21             # via pylint
-lazy-object-proxy==1.4.3  # via astroid
-mccabe==0.6.1             # via pylint
-multidict==4.5.2          # via aiohttp, yarl
-pathspec==0.8.0           # via black
+    # via -r requirements.in
+bleach==3.3.0
+    # via readme-renderer
+certifi==2019.6.16
+    # via requests
+chardet==3.0.4
+    # via
+    #   aiohttp
+    #   requests
+click==7.1.2
+    # via
+    #   black
+    #   pip-tools
+docutils==0.15.2
+    # via readme-renderer
+fancycompleter==0.8
+    # via pdbpp
+idna==2.8
+    # via
+    #   requests
+    #   yarl
+isort==4.3.21
+    # via pylint
+lazy-object-proxy==1.4.3
+    # via astroid
+mccabe==0.6.1
+    # via pylint
+multidict==4.5.2
+    # via
+    #   aiohttp
+    #   yarl
+packaging==20.9
+    # via bleach
+pathspec==0.8.0
+    # via black
 pdbpp==0.10.0
+    # via -r requirements.in
 pip-tools==5.2.1
-pkginfo==1.5.0.1          # via twine
+    # via -r requirements.in
+pkginfo==1.5.0.1
+    # via twine
 pudb==2019.1
-pygments==2.4.2           # via pdbpp, pudb, readme-renderer
+    # via -r requirements.in
+pygments==2.4.2
+    # via
+    #   pdbpp
+    #   pudb
+    #   readme-renderer
 pylint==2.5.3
-readme-renderer==24.0     # via twine
-regex==2020.6.8           # via black
-requests-toolbelt==0.9.1  # via twine
-requests==2.22.0          # via requests-toolbelt, twine
-six==1.12.0               # via astroid, bleach, pip-tools, readme-renderer
-toml==0.10.1              # via black, pylint
-tqdm==4.34.0              # via twine
+    # via -r requirements.in
+pyparsing==2.4.7
+    # via packaging
+readme-renderer==24.0
+    # via twine
+regex==2020.6.8
+    # via black
+requests-toolbelt==0.9.1
+    # via twine
+requests==2.22.0
+    # via
+    #   requests-toolbelt
+    #   twine
+six==1.12.0
+    # via
+    #   astroid
+    #   bleach
+    #   pip-tools
+    #   readme-renderer
+toml==0.10.1
+    # via
+    #   black
+    #   pylint
+tqdm==4.34.0
+    # via twine
 twine==1.13.0
-typed-ast==1.4.1          # via astroid, black
-urllib3==1.25.3           # via requests
-urwid==2.0.1              # via pudb
-webencodings==0.5.1       # via bleach
-wmctrl==0.3               # via pdbpp
-wrapt==1.12.1             # via astroid
-yarl==1.3.0               # via aiohttp
+    # via -r requirements.in
+typed-ast==1.4.1
+    # via black
+urllib3==1.25.3
+    # via requests
+urwid==2.0.1
+    # via pudb
+webencodings==0.5.1
+    # via bleach
+wmctrl==0.3
+    # via pdbpp
+wrapt==1.12.1
+    # via astroid
+yarl==1.3.0
+    # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
-# pip==20.1.1               # via pip-tools
-# setuptools==47.3.1        # via twine
+# pip
+# setuptools
