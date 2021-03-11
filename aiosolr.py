@@ -28,6 +28,8 @@ class Response:
         if mlt_data:
             mlt_data_key = list(mlt_data.keys())[0]
             self.more_like_this = mlt_data[mlt_data_key].get("docs", [])
+        else:
+            self.more_like_this = []
         self.status = status
         self.suggestions = []
 
