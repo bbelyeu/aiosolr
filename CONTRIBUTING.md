@@ -2,6 +2,7 @@
 
 * Python version and dependencies
 * Code formatting
+* PEP8
 
 ## Python version and dependencies
 
@@ -12,3 +13,7 @@ Dependencies can be managed with [pip-tools](https://github.com/jazzband/pip-too
 ## Code formatting
 
 We encourage the use of the [Black](https://black.readthedocs.io/en/stable/) code formatter.
+
+## PEP8
+
+Please follow all PEP8 standards except for the antiquated 80 column rule.
