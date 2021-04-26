@@ -1,12 +1,16 @@
 """AIOSolr module."""
 
+import asyncio
 import json
+import logging
 import re
 
 import aiohttp
 import bleach
 
 from urllib.parse import urlparse
+
+LOGGER = logging.getLogger("aiosolr")
 
 
 class SolrError(Exception):
@@ -87,9 +91,7 @@ class Solr:
             # connection timeout to 4 b/c of the TCP packet retransmission window
             # http://docs.python-requests.org/en/master/user/advanced/#timeouts
             # But in many cases that will be too slow
-            self.timeout = aiohttp.ClientTimeout(
-                sock_connect=timeout[0], sock_read=timeout[1]
-            )
+            self.timeout = aiohttp.ClientTimeout(sock_connect=timeout[0], sock_read=timeout[1])
         else:
             self.timeout = aiohttp.ClientTimeout(total=timeout)
 
@@ -203,6 +205,49 @@ class Solr:
         # Strip a final time in case truncating left whitespace on the end
         return query.strip()
 
+    async def check_dataimport_status(
+        self, handler="dataimport", max_retries=5, sleep_interval=60, **kwargs
+    ):
+        """Loop and check dataimport status until it is successful."""
+        LOGGER.debug("Checking status of indexing...")
+
+        status = False
+        response_body = None
+        retries = 0
+
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?command=status&wt={self.response_writer}"
+        while status is False and retries < max_retries:
+            try:
+                solr_response = await self._get(url)
+                response_body = self._deserialize(solr_response)
+                if response_body["status"] == "idle":
+                    LOGGER.debug("Indexing completed:")
+                    status = response_body["statusMessages"]
+                    break
+            except Exception:
+                LOGGER.debug("Status not ready yet, sleeping...")
+
+            retries += 1
+            asyncio.sleep(sleep_interval)
+
+        if (
+            response_body
+            and response_body.status_code == 200
+            and status is not False
+            and retries < max_retries
+        ):
+            LOGGER.debug(status)
+        else:
+            msg = (
+                "Unable to verify dataimport success on %s after %s seconds and %s retries",
+                collection,
+                sleep_interval * retries,
+                retries,
+            )
+            LOGGER.error(msg)
+            raise SolrError(msg)
+
     @staticmethod
     def clean(
         query,  # end user query
@@ -243,27 +288,45 @@ class Solr:
 
     async def close(self):
         """Close down Client Session."""
+        LOGGER.debug("Closing Solr session connections...")
         if self.session:
             await self.session.close()
 
     async def commit(self, handler="update", soft=False, **kwargs):
         """Perform a commit on the collection."""
+        LOGGER.debug("Performing commit to Solr collection...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?"
         url += "softCommit=true" if soft is True else "commit=true"
         return await self._get_check_ok_deserialize(url)
 
+    async def dataimport(
+        self,
+        handler="dataimport",
+        clean=False,
+        command="full-import",
+        commit=True,
+        optimize="false",
+        **kwargs,
+    ):
+        """Call a DIH (data import handler)."""
+        LOGGER.debug("Calling dataimport hanlder...")
+        collection = self._get_collection(kwargs)
+        url = f"{self.base_url}/{collection}/{handler}?command=status&wt={self.response_writer}"
+        solr_response = await self._get(url)
+        return self._deserialize(solr_response)
+
     async def get(self, _id, handler="get", **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
+        LOGGER.debug("Getting document from Solr...")
         collection = self._get_collection(kwargs)
-        url = (
-            f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
-        )
+        url = f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
 
     async def suggestions(self, handler, query=None, build=False, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
+        LOGGER.debug("Querying Solr suggestions handler...")
         if not query and not build:
             return SolrError("query or build required for suggestions.")
 
@@ -299,6 +362,7 @@ class Solr:
         **kwargs,
     ):
         """Query a requestHandler of class SearchHandler."""
+        LOGGER.debug("Querying Solr handler...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
@@ -332,6 +396,7 @@ class Solr:
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""
+        LOGGER.debug("Updating data in Solr via handler...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
