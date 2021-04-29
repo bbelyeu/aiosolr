@@ -233,7 +233,7 @@ class Solr:
 
         if (
             response_body
-            and response_body.status_code == 200
+            and response_body.status == 200
             and status is not False
             and retries < max_retries
         ):
