@@ -229,7 +229,7 @@ class Solr:
                 LOGGER.debug("Status not ready yet, sleeping...")
 
             retries += 1
-            asyncio.sleep(sleep_interval)
+            await asyncio.sleep(sleep_interval)
 
         if (
             response_body
