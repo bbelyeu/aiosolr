@@ -300,28 +300,13 @@ class Solr:
         url += "softCommit=true" if soft is True else "commit=true"
         return await self._get_check_ok_deserialize(url)
 
-    async def dataimport(
-        self,
-        handler="dataimport",
-        clean=False,
-        command="full-import",
-        commit=True,
-        optimize=False,
-        verbose=False,
-        **kwargs,
-    ):
+    async def dataimport(self, handler="dataimport", **kwargs):
         """Call a DIH (data import handler)."""
         LOGGER.debug("Calling dataimport hanlder...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
-        data = {
-            "clean": clean,
-            "command": command,
-            "commit": commit,
-            "optimize": optimize,
-            "verbose": verbose,
-        }
-        solr_response = await self._post(url, data)
+        url += self._kwarg_to_query_string(kwargs)
+        solr_response = await self._get(url)
         return self._deserialize(solr_response)
 
     async def get(self, _id, handler="get", **kwargs):

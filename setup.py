@@ -7,7 +7,7 @@ from setuptools import setup
 if sys.version_info < (3, 6):
     sys.exit("Sorry, Python < 3.6 is not supported")
 
-__version__ = "3.4.3"
+__version__ = "3.4.4"
 
 setup(
     name="aiosolr",
