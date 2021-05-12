@@ -306,14 +306,22 @@ class Solr:
         clean=False,
         command="full-import",
         commit=True,
-        optimize="false",
+        optimize=False,
+        verbose=False,
         **kwargs,
     ):
         """Call a DIH (data import handler)."""
         LOGGER.debug("Calling dataimport hanlder...")
         collection = self._get_collection(kwargs)
-        url = f"{self.base_url}/{collection}/{handler}?command=status&wt={self.response_writer}"
-        solr_response = await self._get(url)
+        url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
+        data = {
+            "clean": clean,
+            "command": command,
+            "commit": commit,
+            "optimize": optimize,
+            "verbose": verbose,
+        }
+        solr_response = await self._post(url, data)
         return self._deserialize(solr_response)
 
     async def get(self, _id, handler="get", **kwargs):
