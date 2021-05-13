@@ -209,7 +209,7 @@ class Solr:
         self, handler="dataimport", max_retries=5, sleep_interval=60, **kwargs
     ):
         """Loop and check dataimport status until it is successful."""
-        LOGGER.debug("Checking status of indexing...")
+        LOGGER.info("Checking status of indexing...")
 
         status = False
         response_body = None
@@ -221,12 +221,12 @@ class Solr:
             try:
                 solr_response = await self._get(url)
                 response_body = self._deserialize(solr_response)
-                if response_body["status"] == "idle":
-                    LOGGER.debug("Indexing completed:")
-                    status = response_body["statusMessages"]
+                if response_body.data["status"] == "idle":
+                    LOGGER.info("Indexing completed!")
+                    status = response_body.data["statusMessages"]
                     break
             except Exception:
-                LOGGER.debug("Status not ready yet, sleeping...")
+                LOGGER.info("Status not ready yet, sleeping...")
 
             retries += 1
             await asyncio.sleep(sleep_interval)
@@ -237,15 +237,17 @@ class Solr:
             and status is not False
             and retries < max_retries
         ):
-            LOGGER.debug(status)
+            LOGGER.info(status)
         else:
             msg = (
-                "Unable to verify dataimport success on %s after %s seconds and %s retries",
+                "Unable to verify dataimport success on %s after %s seconds and %s retries and "
+                "status message %s!",
                 collection,
                 sleep_interval * retries,
                 retries,
+                status,
             )
-            LOGGER.error(msg)
+            # LOGGER.error(msg)
             raise SolrError(msg)
 
     @staticmethod
@@ -288,13 +290,13 @@ class Solr:
 
     async def close(self):
         """Close down Client Session."""
-        LOGGER.debug("Closing Solr session connections...")
+        LOGGER.info("Closing Solr session connections...")
         if self.session:
             await self.session.close()
 
     async def commit(self, handler="update", soft=False, **kwargs):
         """Perform a commit on the collection."""
-        LOGGER.debug("Performing commit to Solr collection...")
+        LOGGER.info("Performing commit to Solr collection...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?"
         url += "softCommit=true" if soft is True else "commit=true"
@@ -302,7 +304,7 @@ class Solr:
 
     async def dataimport(self, handler="dataimport", **kwargs):
         """Call a DIH (data import handler)."""
-        LOGGER.debug("Calling dataimport hanlder...")
+        LOGGER.info("Calling dataimport handler...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
@@ -311,7 +313,7 @@ class Solr:
 
     async def get(self, _id, handler="get", **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
-        LOGGER.debug("Getting document from Solr...")
+        LOGGER.info("Getting document from Solr...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
@@ -319,7 +321,7 @@ class Solr:
 
     async def suggestions(self, handler, query=None, build=False, **kwargs):
         """Query a requestHandler of class SearchHandler using the SuggestComponent."""
-        LOGGER.debug("Querying Solr suggestions handler...")
+        LOGGER.info("Querying Solr suggestions handler...")
         if not query and not build:
             return SolrError("query or build required for suggestions.")
 
@@ -355,7 +357,7 @@ class Solr:
         **kwargs,
     ):
         """Query a requestHandler of class SearchHandler."""
-        LOGGER.debug("Querying Solr handler...")
+        LOGGER.info("Querying Solr handler...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
@@ -389,7 +391,7 @@ class Solr:
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""
-        LOGGER.debug("Updating data in Solr via handler...")
+        LOGGER.info("Updating data in Solr via handler...")
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
