@@ -14,6 +14,7 @@ exclude = '''
     | buck-out
     | build
     | dist
+    | yoyo
   )/
   | setup.py
 )
@@ -24,3 +25,8 @@ addopts = "-svx --cov=."
 testpaths = [
     "tests",
 ]
+
+[tool.coverage.run]
+omit =["tests/*", "*generated*", "resolver.py"]
+[tool.coverage.report]
+omit =["tests/*", "*generated*", "resolver.py"]
