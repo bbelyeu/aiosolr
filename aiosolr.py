@@ -171,6 +171,10 @@ class Solr:
             if isinstance(value, list):
                 separator = "+" if param in ("qf",) else ","
                 query_string += "&{}={}".format(param, separator.join(value))
+            elif isinstance(value, bool):
+                # using title cased bools results in the following error in Solr logs
+                # org.apache.solr.common.SolrException: invalid boolean value: False
+                query_string += f"&{param}=true" if value else f"&{param}=false"
             else:
                 query_string += f"&{param}={value}"
 
