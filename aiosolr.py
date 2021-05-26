@@ -4,11 +4,10 @@ import asyncio
 import json
 import logging
 import re
+from urllib.parse import urlparse
 
 import aiohttp
 import bleach
-
-from urllib.parse import urlparse
 
 LOGGER = logging.getLogger("aiosolr")
 
@@ -17,6 +16,7 @@ class SolrError(Exception):
     """Base class for exceptions in this module."""
 
     def __init__(self, message, trace=None):
+        super().__init__()
         self.message = message
         self.trace = trace
 
@@ -53,12 +53,16 @@ class Response:
                     if sugg not in self.suggestions:
                         self.suggestions.append(sugg)
 
+    def get(self, name, default=None):
+        """Get an attribute or return default value."""
+        return getattr(self, name, default)
+
 
 # TODO Support something other than JSON
 class Solr:
     """Class representing a connection to Solr."""
 
-    def __init__(
+    def __init__(  # pylint: disable=dangerous-default-value
         self,
         scheme="http",
         host="127.0.0.1",
@@ -110,6 +114,8 @@ class Solr:
             data = resp.body
         return Response(data, resp.status)
 
+    # TODO Make headers something other than a dictionary
+    # pylint: disable=dangerous-default-value
     async def _get(self, url, headers={}):
         """Network request to get data from a server."""
         if "Content-Type" not in headers and self.response_writer == "json":
@@ -120,6 +126,8 @@ class Solr:
 
         return response
 
+    # TODO Make headers something other than a dictionary
+    # pylint: disable=dangerous-default-value
     async def _get_check_ok_deserialize(self, url, headers={}):
         """Get url, check status 200 and return deserialized data."""
         response = await self._get(url, headers)
@@ -130,7 +138,8 @@ class Solr:
                 error = self._deserialize(response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
-            except BaseException:
+            except BaseException:  # pylint: disable=broad-except
+                # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 msg = str(response.body)
 
             raise SolrError(msg, trace)
@@ -143,7 +152,7 @@ class Solr:
             raise SolrError("Collection name not provided.")
         return kwargs.get("collection") or self.collection
 
-    def _kwarg_to_query_string(self, kwargs):
+    def _kwarg_to_query_string(self, kwargs):  # pylint: disable=no-self-use
         """Convert kwarg arguments to Solr query string."""
         # TODO Think about if I should validate any query params in kwargs?
         query_string = ""
@@ -229,7 +238,8 @@ class Solr:
                     LOGGER.info("Indexing completed!")
                     status = response_body.data["statusMessages"]
                     break
-            except Exception:
+            except BaseException:  # pylint: disable=broad-except
+                # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 LOGGER.info("Status not ready yet, sleeping...")
 
             retries += 1
@@ -386,7 +396,8 @@ class Solr:
                 error = self._deserialize(solr_response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
-            except BaseException:
+            except BaseException:  # pylint: disable=broad-except
+                # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 msg = str(solr_response.body)
 
             raise SolrError(msg, trace)
@@ -409,7 +420,8 @@ class Solr:
                 error = self._deserialize(response)
                 msg = error.get("error", {}).get("msg", error)
                 trace = error.get("error", {}).get("trace")
-            except BaseException:
+            except BaseException:  # pylint: disable=broad-except
+                # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 msg = str(response.body)
 
             raise SolrError(msg, trace)
