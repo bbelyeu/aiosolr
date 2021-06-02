@@ -20,6 +20,8 @@ bleach==3.3.0
     # via readme-renderer
 certifi==2020.12.5
     # via requests
+cffi==1.14.5
+    # via cryptography
 chardet==4.0.0
     # via
     #   aiohttp
@@ -30,6 +32,8 @@ click==8.0.1
     #   pip-tools
 colorama==0.4.4
     # via twine
+cryptography==3.4.7
+    # via secretstorage
 docutils==0.17.1
     # via readme-renderer
 fancycompleter==0.9.1
@@ -46,6 +50,10 @@ isort==5.8.0
     # via pylint
 jedi==0.18.0
     # via pudb
+jeepney==0.6.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==23.0.1
     # via twine
 lazy-object-proxy==1.6.0
@@ -74,6 +82,8 @@ pkginfo==1.7.0
     # via twine
 pudb==2021.1
     # via -r requirements.in
+pycparser==2.20
+    # via cffi
 pygments==2.9.0
     # via
     #   pdbpp
@@ -97,6 +107,8 @@ requests==2.25.1
     #   twine
 rfc3986==1.5.0
     # via twine
+secretstorage==3.3.1
+    # via keyring
 six==1.16.0
     # via
     #   bleach
@@ -112,7 +124,7 @@ twine==3.4.1
     # via -r requirements.in
 typing-extensions==3.10.0.0
     # via aiohttp
-urllib3==1.26.4
+urllib3==1.26.5
     # via requests
 urwid==2.1.2
     # via pudb
