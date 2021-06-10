@@ -13,7 +13,6 @@ setup(
     name="aiosolr",
     version=__version__,
     description=__doc__,
-
     author="Brad Belyeu",
     author_email="bradley.belyeu@life.church",
     classifiers=[
