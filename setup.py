@@ -4,15 +4,14 @@ import sys
 from setuptools import setup
 
 if sys.version_info < (3, 6):
-    sys.exit('Sorry, Python < 3.6 is not supported')
+    sys.exit("Sorry, Python < 3.6 is not supported")
 
-__version__ = '2.1.0'
+__version__ = "3.4.6"
 
 setup(
     name="aiosolr",
     version=__version__,
     description=__doc__,
-
     author="Brad Belyeu",
     author_email="bradley.belyeu@life.church",
     classifiers=[
@@ -31,7 +30,7 @@ setup(
     long_description_content_type="text/markdown",
     platforms="any",
     py_modules=["aiosolr"],
-    python_requires='>3.6.0',
-    test_suite='tests',
+    python_requires=">3.6.0",
+    test_suite="tests",
     url="https://github.com/bbelyeu/aiosolr/",
 )
