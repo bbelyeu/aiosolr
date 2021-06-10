@@ -26,32 +26,34 @@ class Response:
 
     def __init__(self, data, status):
         self.data = data
-        self.doc = data.get("doc", {})
-        self.docs = data.get("response", {}).get("docs", [])
-        mlt_data = data.get("moreLikeThis", {})
-        if mlt_data:
-            mlt_data_key = list(mlt_data.keys())[0]
-            self.more_like_this = mlt_data[mlt_data_key].get("docs", [])
-        else:
-            self.more_like_this = []
+        self.more_like_this = []
         self.status = status
         self.suggestions = []
 
-        spellcheck = data.get("spellcheck", {})
-        # Collations returns a list of strings with the first element set to "collations"
-        if (
-            "collations" in spellcheck
-            and isinstance(spellcheck["collations"], list)
-            and len(spellcheck["collations"]) > 1
-        ):
-            self.suggestions.append(spellcheck["collations"][1])
+        if isinstance(data, dict):
+            self.doc = data.get("doc", {})
+            self.docs = data.get("response", {}).get("docs", [])
+            mlt_data = data.get("moreLikeThis", {})
 
-        # First element is the original query, 2nd element should be a dict of suggestions
-        for solr_suggs in spellcheck.get("suggestions", []):
-            if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
-                for sugg in solr_suggs["suggestion"]:
-                    if sugg not in self.suggestions:
-                        self.suggestions.append(sugg)
+            if mlt_data:
+                mlt_data_key = list(mlt_data.keys())[0]
+                self.more_like_this = mlt_data[mlt_data_key].get("docs", [])
+
+            spellcheck = data.get("spellcheck", {})
+            # Collations returns a list of strings with the first element set to "collations"
+            if (
+                "collations" in spellcheck
+                and isinstance(spellcheck["collations"], list)
+                and len(spellcheck["collations"]) > 1
+            ):
+                self.suggestions.append(spellcheck["collations"][1])
+
+            # First element is the original query, 2nd element should be a dict of suggestions
+            for solr_suggs in spellcheck.get("suggestions", []):
+                if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
+                    for sugg in solr_suggs["suggestion"]:
+                        if sugg not in self.suggestions:
+                            self.suggestions.append(sugg)
 
     def get(self, name, default=None):
         """Get an attribute or return default value."""
