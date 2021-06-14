@@ -26,13 +26,17 @@ class Response:
 
     def __init__(self, data, status):
         self.data = data
+        self.doc = {}
+        self.docs = []
         self.more_like_this = []
         self.status = status
         self.suggestions = []
 
         if isinstance(data, dict):
             self.doc = data.get("doc", {})
-            self.docs = data.get("response", {}).get("docs", [])
+            response = data.get("response", {})
+            if response:
+                self.docs = response.get("docs", [])
             mlt_data = data.get("moreLikeThis", {})
 
             if mlt_data:
