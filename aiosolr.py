@@ -195,10 +195,16 @@ class Solr:
 
         return query_string
 
-    async def _post(self, url, data):
+    async def _post(self, url, data, **kwargs):
         """Network request to post data to a server."""
-        async with self.session.post(url, json=data) as response:
+        if isinstance(data, dict):
+            kwargs["json"] = data
+        else:
+            kwargs["data"] = data
+
+        async with self.session.post(url, **kwargs) as response:
             response.body = await response.text()
+
         return response
 
     @staticmethod
@@ -417,7 +423,7 @@ class Solr:
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
 
-        response = await self._post(url, data)
+        response = await self._post(url, data, **kwargs)
         if response.status == 200:
             data = self._deserialize(response)
         else:
