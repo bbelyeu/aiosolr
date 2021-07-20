@@ -198,8 +198,16 @@ class Solr:
     async def _post(self, url, data, **kwargs):
         """Network request to post data to a server."""
         if isinstance(data, dict):
+            if "headers" in kwargs:
+                kwargs["headers"]["Content-Type"] = "application/json"
+            else:
+                kwargs["headers"] = {"Content-Type": "application/json"}
             kwargs["json"] = data
         else:
+            if "headers" in kwargs:
+                kwargs["headers"]["Content-Type"] = "text/xml"
+            else:
+                kwargs["headers"] = {"Content-Type": "text/xml"}
             kwargs["data"] = data
 
         async with self.session.post(url, **kwargs) as response:
