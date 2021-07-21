@@ -195,23 +195,25 @@ class Solr:
 
         return query_string
 
-    async def _post(self, url, data, **kwargs):
+    async def _post(self, url, data, headers=None):
         """Network request to post data to a server."""
         if isinstance(data, dict):
-            if "headers" in kwargs:
-                kwargs["headers"]["Content-Type"] = "application/json"
+            if headers:
+                headers["Content-Type"] = "application/json"
             else:
-                kwargs["headers"] = {"Content-Type": "application/json"}
-            kwargs["json"] = data
-        else:
-            if "headers" in kwargs:
-                kwargs["headers"]["Content-Type"] = "text/xml"
-            else:
-                kwargs["headers"] = {"Content-Type": "text/xml"}
-            kwargs["data"] = data
+                headers = {"Content-Type": "application/json"}
 
-        async with self.session.post(url, **kwargs) as response:
-            response.body = await response.text()
+            async with self.session.post(url, headers=headers, json=data) as response:
+                response.body = await response.text()
+
+        else:
+            if headers:
+                headers["Content-Type"] = "text/xml"
+            else:
+                headers = {"Content-Type": "text/xml"}
+
+            async with self.session.post(url, data=data, headers=headers) as response:
+                response.body = await response.text()
 
         return response
 
@@ -431,7 +433,7 @@ class Solr:
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
 
-        response = await self._post(url, data, **kwargs)
+        response = await self._post(url, data)
         if response.status == 200:
             data = self._deserialize(response)
         else:
