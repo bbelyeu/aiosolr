@@ -387,6 +387,7 @@ class Solr:
     async def query(
         self,
         handler="select",
+        prefer_local=False,
         query="*",
         spellcheck=False,
         spellcheck_dicts=[],
@@ -408,6 +409,9 @@ class Solr:
             for spellcheck_dict in spellcheck_dicts:
                 # Solr allows the same url query param multiple times... go figure?
                 url += f"&spellcheck.dictionary={spellcheck_dict}"
+
+        if prefer_local:
+            url += "&shards.preference=replica.location:local"
 
         url += self._kwarg_to_query_string(kwargs)
 
