@@ -30,7 +30,7 @@ class Response:
         self.docs = []
         self.more_like_this = []
         self.status = status
-        self.suggestions = []
+        self.spelling_suggestions = []
 
         if isinstance(data, dict):
             self.doc = data.get("doc", {})
@@ -50,14 +50,14 @@ class Response:
                 and isinstance(spellcheck["collations"], list)
                 and len(spellcheck["collations"]) > 1
             ):
-                self.suggestions.append(spellcheck["collations"][1])
+                self.spelling_suggestions.append(spellcheck["collations"][1])
 
             # First element is the original query, 2nd element should be a dict of suggestions
             for solr_suggs in spellcheck.get("suggestions", []):
                 if isinstance(solr_suggs, dict) and "suggestion" in solr_suggs:
                     for sugg in solr_suggs["suggestion"]:
-                        if sugg not in self.suggestions:
-                            self.suggestions.append(sugg)
+                        if sugg not in self.spelling_suggestions:
+                            self.spelling_suggestions.append(sugg)
 
     def get(self, name, default=None):
         """Get an attribute or return default value."""
@@ -356,8 +356,13 @@ class Solr:
         return await self._get_check_ok_deserialize(url)
 
     async def suggestions(self, handler, query=None, build=False, **kwargs):
-        """Query a requestHandler of class SearchHandler using the SuggestComponent."""
+        """
+        Query a RequestHandler of class SearchHandler using the SuggestComponent.
+
+        Returns a tuple of response object and useful data or None if failure.
+        """
         LOGGER.info("Querying Solr suggestions handler...")
+
         if not query and not build:
             return SolrError("query or build required for suggestions.")
 
@@ -367,13 +372,16 @@ class Solr:
             url += f"&suggest.q={query}"
         if build:
             url += "&suggest.build=true"
+
         response = await self._get_check_ok_deserialize(url)
 
         if query:
             if "+" in query:
                 query = query.replace("+", " ")
+
             suggestions = []
             for name in response.data["suggest"].keys():
+
                 try:
                     suggestions += [
                         {"match": s["term"], "payload": s["payload"]}
@@ -381,8 +389,10 @@ class Solr:
                     ]
                 except KeyError:
                     pass
-            return suggestions
-        return response.data
+
+            return response, suggestions
+
+        return response, None
 
     async def query(
         self,

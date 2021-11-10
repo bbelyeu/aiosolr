@@ -4,142 +4,148 @@
 #
 #    pip-compile --no-emit-index-url --no-emit-trusted-host requirements.in
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.0
     # via -r requirements.in
-appdirs==1.4.4
-    # via black
-astroid==2.5.6
+aiosignal==1.2.0
+    # via aiohttp
+astroid==2.8.4
     # via pylint
-async-timeout==3.0.1
+async-timeout==4.0.0
     # via aiohttp
 attrs==21.2.0
     # via aiohttp
-black==21.5b1
+black==21.10b0
     # via -r requirements.in
-bleach==3.3.0
+bleach==4.1.0
     # via readme-renderer
-certifi==2020.12.5
+certifi==2021.10.8
     # via requests
-cffi==1.14.5
-    # via cryptography
-chardet==4.0.0
+charset-normalizer==2.0.7
     # via
     #   aiohttp
     #   requests
-click==8.0.1
+click==8.0.3
     # via
     #   black
     #   pip-tools
 colorama==0.4.4
     # via twine
-cryptography==3.4.7
-    # via secretstorage
-docutils==0.17.1
+docutils==0.18
     # via readme-renderer
 fancycompleter==0.9.1
     # via pdbpp
-idna==2.10
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
+idna==3.3
     # via
     #   requests
     #   yarl
-importlib-metadata==4.0.1
+importlib-metadata==4.8.2
     # via
     #   keyring
     #   twine
-isort==5.8.0
+isort==5.10.1
     # via pylint
 jedi==0.18.0
     # via pudb
-jeepney==0.6.0
-    # via
-    #   keyring
-    #   secretstorage
-keyring==23.0.1
+keyring==23.2.1
     # via twine
 lazy-object-proxy==1.6.0
     # via astroid
 mccabe==0.6.1
     # via pylint
-multidict==5.1.0
+multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
 mypy-extensions==0.4.3
     # via black
-packaging==20.9
+packaging==21.2
     # via bleach
 parso==0.8.2
     # via jedi
-pathspec==0.8.1
+pathspec==0.9.0
     # via black
-pdbpp==0.10.2
+pdbpp==0.10.3
     # via -r requirements.in
-pep517==0.10.0
+pep517==0.12.0
     # via pip-tools
-pip-tools==6.1.0
+pip-tools==6.4.0
     # via -r requirements.in
-pkginfo==1.7.0
+pkginfo==1.7.1
     # via twine
-pudb==2021.1
+platformdirs==2.4.0
+    # via
+    #   black
+    #   pylint
+pudb==2021.2.2
     # via -r requirements.in
-pycparser==2.20
-    # via cffi
-pygments==2.9.0
+pygments==2.10.0
     # via
     #   pdbpp
     #   pudb
     #   readme-renderer
-pylint==2.8.2
+pylint==2.11.1
     # via -r requirements.in
 pyparsing==2.4.7
     # via packaging
 pyrepl==0.9.0
     # via fancycompleter
-readme-renderer==29.0
+readme-renderer==30.0
     # via twine
-regex==2021.4.4
+regex==2021.11.10
     # via black
 requests-toolbelt==0.9.1
     # via twine
-requests==2.25.1
+requests==2.26.0
     # via
     #   requests-toolbelt
     #   twine
 rfc3986==1.5.0
     # via twine
-secretstorage==3.3.1
-    # via keyring
 six==1.16.0
-    # via
-    #   bleach
-    #   readme-renderer
+    # via bleach
 toml==0.10.2
+    # via pylint
+tomli==1.2.2
     # via
     #   black
     #   pep517
-    #   pylint
-tqdm==4.61.0
+tqdm==4.62.3
     # via twine
-twine==3.4.1
+twine==3.5.0
     # via -r requirements.in
-typing-extensions==3.10.0.0
-    # via aiohttp
-urllib3==1.26.5
+typing-extensions==3.10.0.2
+    # via
+    #   astroid
+    #   async-timeout
+    #   black
+    #   pylint
+urllib3==1.26.7
     # via requests
-urwid==2.1.2
+urwid-readline==0.13
     # via pudb
+urwid==2.1.2
+    # via
+    #   pudb
+    #   urwid-readline
 webencodings==0.5.1
     # via bleach
-wheel==0.36.2
-    # via -r requirements.in
+wheel==0.37.0
+    # via
+    #   -r requirements.in
+    #   pip-tools
 wmctrl==0.4
     # via pdbpp
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
-yarl==1.6.3
+yarl==1.7.2
     # via aiohttp
-zipp==3.4.1
+zipp==3.6.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
+# setuptools
