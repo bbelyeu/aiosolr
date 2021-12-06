@@ -355,6 +355,17 @@ class Solr:
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
 
+    async def ping(self, handler="ping", action="status", **kwargs):
+        """Use Solr's ping handler to check status of, enable, or disable a node."""
+        assert action.lower() in ("status", "enable", "disable")
+        LOGGER.info("Pinging Solr...")
+        collection = self._get_collection(kwargs)
+        url = (
+            f"{self.base_url}/{collection}/{handler}"
+            f"?distrib=false&action={action}&wt={self.response_writer}"
+        )
+        return await self._get_check_ok_deserialize(url)
+
     async def suggestions(self, handler, query=None, build=False, **kwargs):
         """
         Query a RequestHandler of class SearchHandler using the SuggestComponent.
