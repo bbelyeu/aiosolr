@@ -385,12 +385,12 @@ class Solr:
             url += "&suggest.build=true"
 
         response = await self._get_check_ok_deserialize(url)
+        suggestions = []
 
         if query:
             if "+" in query:
                 query = query.replace("+", " ")
 
-            suggestions = []
             for name in response.data["suggest"].keys():
 
                 try:
@@ -401,9 +401,7 @@ class Solr:
                 except KeyError:
                     pass
 
-            return response, suggestions
-
-        return response, None
+        return response, suggestions
 
     async def query(
         self,
