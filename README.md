@@ -21,16 +21,19 @@ to init are *scheme*, *host*, *port*, *collection*, and *timeout*.
 
     import aiosolr
 
-    client = aiosolr.Solr(host=localhost, collection="example", port=8983)
+    client = aiosolr.Client(host=localhost, collection="example", port=8983)
 
 Alternatively you may instantiate via passing a connection URL like:
 
     import aiosolr
 
-    client = aiosolr.Solr(connection_url="http://host:1234/path/to/solr/collection")
+    client = aiosolr.Client(connection_url="http://host:1234/path/to/solr/collection")
 
-Once you have your *Solr* instance, there are methods available for querying.
+Once you have your *Solr* instance, you need to setup the session like:
 
+    client.setup()
+
+Then there are methods available for querying.
 You can use Solr's built-in get handler with the *get* method like:
 
     client.get(document_id)
