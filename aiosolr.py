@@ -1,4 +1,10 @@
-"""AIOSolr module."""
+"""
+AsyncIO Python client for Apache Solr
+
+The idea behind this module is to provide easy access to Solr in an efficient manner.
+This is achieved through using AIOHTTP client sessions with shared connection pooling.
+Ease of use is provided by mapping Solr Handlers to methods making it RPC like.
+"""
 
 import asyncio
 import json
@@ -65,8 +71,8 @@ class Response:
 
 
 # TODO Support something other than JSON
-class Solr:
-    """Class representing a connection to Solr."""
+class Client:
+    """Class representing a client connection to Solr."""
 
     def __init__(  # pylint: disable=dangerous-default-value
         self,
@@ -82,8 +88,8 @@ class Solr:
         """Init to instantiate Solr class.
 
         If the core/collection is not provided it should be passed to the methods as required.
-        timeout, ttl_dns_cache, and trace_configs arguments are setup and sent to the
-        AIOHTTP ClientSession class.
+        timeout, ttl_dns_cache, and trace_configs arguments are stored to be used when setting up
+        the AIOHTTP ClientSession class.
         See: https://docs.aiohttp.org/en/stable/client_reference.html
         """
         if connection_url is None:
@@ -105,11 +111,10 @@ class Solr:
         else:
             self.timeout = aiohttp.ClientTimeout(total=timeout)
 
+        self.session = None
         # How long to cache DNS lookups - defaulting to an hour
-        tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=ttl_dns_cache)
-        self.session = aiohttp.ClientSession(
-            connector=tcp_conn, timeout=self.timeout, trace_configs=trace_configs
-        )
+        self.tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=ttl_dns_cache)
+        self.trace_configs = trace_configs
 
     def _deserialize(self, resp):
         """Deserialize Solr response to Python object."""
@@ -320,13 +325,13 @@ class Solr:
 
         if max_len:
             # Queries that are too long can cause performance issues
-            query = Solr._truncate_utf8(query, max_len)
+            query = Client._truncate_utf8(query, max_len)
 
         return query
 
     async def close(self):
         """Close down Client Session."""
-        LOGGER.info("Closing Solr session connections...")
+        LOGGER.info("Closing Solr session connection...")
         if self.session:
             await self.session.close()
 
@@ -365,6 +370,16 @@ class Solr:
             f"?distrib=false&action={action}&wt={self.response_writer}"
         )
         return await self._get_check_ok_deserialize(url)
+
+    async def setup(self):
+        """Setup the ClientSession for use."""
+        LOGGER.info("Creating Solr session connection...")
+        self.session = aiohttp.ClientSession(
+            connector=self.tcp_conn,
+            # connector_owner=False,
+            timeout=self.timeout,
+            trace_configs=self.trace_configs,
+        )
 
     async def suggestions(self, handler, query=None, build=False, **kwargs):
         """
