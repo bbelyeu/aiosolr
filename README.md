@@ -68,7 +68,7 @@ Arguments should be the "handler" ("update" by default) and "soft" as a boolean 
 whether it should be a hard or soft commit (defaults to False).
 
 There is one more method you might want to use before querying Solr especially
-if the query is coming from an untrusted end user. There is a *clean* method which can be
+if the query is coming from an untrusted end user. There is a *clean_query* method which can be
 used to strip out unwanted characters. The function signature allows the following arguments:
 
     @staticmethod
@@ -82,6 +82,10 @@ used to strip out unwanted characters. The function signature allows the followi
         # regex of chars to remove
         remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
     ):
+
+Use it like:
+
+    trusted_query = aiosolr.clean_query(users_query)
 
 Once you are finished with the Solr instance, you should call the method *close* to cleanup
 sessions like:
