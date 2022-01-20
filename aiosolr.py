@@ -487,3 +487,7 @@ class Client:
             raise SolrError(msg, trace)
 
         return data
+
+
+# Convenience shortcut to clean method
+clean_query = Client.clean
