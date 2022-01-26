@@ -21,10 +21,13 @@ LOGGER = logging.getLogger("aiosolr")
 class SolrError(Exception):
     """Base class for exceptions in this module."""
 
-    def __init__(self, message, trace=None):
-        super().__init__()
+    def __init__(self, message, *args, trace=None, **kwargs):
         self.message = message
         self.trace = trace
+        super().__init__(message, *args, **kwargs)
+
+    def __str__(self):
+        return self.message
 
 
 class Response:
@@ -132,6 +135,9 @@ class Client:
         if "Content-Type" not in headers and self.response_writer == "json":
             headers["Content-Type"] = "application/json"
 
+        if not self.session:
+            await self.setup()
+
         async with self.session.get(url, headers=headers) as response:
             response.body = await response.text()
 
@@ -202,6 +208,9 @@ class Client:
 
     async def _post(self, url, data, headers=None):
         """Network request to post data to a server."""
+        if not self.session:
+            await self.setup()
+
         if isinstance(data, dict):
             if headers:
                 headers["Content-Type"] = "application/json"
