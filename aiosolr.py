@@ -153,8 +153,8 @@ class Client:
             msg, trace = None, None
             try:
                 error = self._deserialize(response)
-                msg = error.get("error", {}).get("msg", error)
-                trace = error.get("error", {}).get("trace")
+                msg = error.data.get("error", {}).get("msg", error)
+                trace = error.data.get("error", {}).get("trace")
             except BaseException:  # pylint: disable=broad-except
                 # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 msg = str(response.body)
@@ -463,8 +463,8 @@ class Client:
             msg, trace = None, None
             try:
                 error = self._deserialize(solr_response)
-                msg = error.get("error", {}).get("msg", error)
-                trace = error.get("error", {}).get("trace")
+                msg = error.data.get("error", {}).get("msg", error)
+                trace = error.data.get("error", {}).get("trace")
             except BaseException:  # pylint: disable=broad-except
                 # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
                 msg = str(solr_response.body)
