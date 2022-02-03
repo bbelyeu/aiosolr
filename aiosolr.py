@@ -211,7 +211,7 @@ class Client:
         if not self.session:
             await self.setup()
 
-        if isinstance(data, dict):
+        if isinstance(data, (dict, list)):
             if headers:
                 headers["Content-Type"] = "application/json"
             else:
