@@ -203,16 +203,17 @@ class Client:
         for param, value in kwargs.items():
             if isinstance(value, list):
                 separator = "+" if param in ("qf",) else ","
-                query_string += "&{}={}".format(param, separator.join(value))
+                clean_vals = [urllib.parse.quote_plus(i) for i in value]
+                query_string += "&{}={}".format(param, separator.join(clean_vals))
             elif isinstance(value, bool):
                 # using title cased bools results in the following error in Solr logs
                 # org.apache.solr.common.SolrException: invalid boolean value: False
                 query_string += f"&{param}=true" if value else f"&{param}=false"
             else:
-                query_string += f"&{param}={value}"
+                clean_val = urllib.parse.quote_plus(value)
+                query_string += f"&{param}={clean_val}"
 
-        # Finally we need to urlencode all the things
-        return urllib.parse.quote_plus(query_string)
+        return query_string
 
     async def _post(self, url, data, headers=None):
         """Network request to post data to a server."""
