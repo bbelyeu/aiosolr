@@ -319,6 +319,7 @@ class Client:
         max_len=200,
         # regex of chars to remove
         remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
+        urlencode=True,
     ):
         """Typical query cleaning."""
         if not allow_http:
@@ -344,6 +345,9 @@ class Client:
         if max_len:
             # Queries that are too long can cause performance issues
             query = Client._truncate_utf8(query, max_len)
+
+        if urlencode:
+            query = urllib.parse.quote_plus(query)
 
         return query
 

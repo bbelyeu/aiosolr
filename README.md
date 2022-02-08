@@ -81,6 +81,7 @@ used to strip out unwanted characters. The function signature allows the followi
         max_len=200,
         # regex of chars to remove
         remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
+        urlencode=True,
     ):
 
 Use it like:
