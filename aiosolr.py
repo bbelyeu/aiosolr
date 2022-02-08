@@ -79,14 +79,16 @@ class Client:
 
     def __init__(  # pylint: disable=dangerous-default-value
         self,
-        scheme="http",
+        *,
+        collection="",
+        connection_url=None,
+        debug=False,
         host="127.0.0.1",
         port="80",
-        collection="",
+        scheme="http",
         timeout=(1, 3),
-        ttl_dns_cache=3600,
         trace_configs=[],
-        connection_url=None,
+        ttl_dns_cache=3600,
     ):
         """Init to instantiate Solr class.
 
@@ -118,6 +120,10 @@ class Client:
         # How long to cache DNS lookups - defaulting to an hour
         self.tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=ttl_dns_cache)
         self.trace_configs = trace_configs
+
+        if debug:
+            LOGGER.setLevel(logging.DEBUG)
+            logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
 
     def _deserialize(self, resp):
         """Deserialize Solr response to Python object."""
