@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import re
-from urllib.parse import urlparse
+import urllib.parse
 
 import aiohttp
 import bleach
@@ -101,7 +101,7 @@ class Client:
             self.base_url = f"{scheme}://{host}:{port}/solr"
             self.collection = collection or None
         else:
-            url = urlparse(connection_url)
+            url = urllib.parse.urlparse(connection_url)
             base_path, collection = url.path.rsplit("/", 1)
             self.base_url = f"{url.scheme}://{url.netloc}{base_path}"
             self.collection = collection or None
@@ -144,6 +144,7 @@ class Client:
         if not self.session:
             await self.setup()
 
+        LOGGER.debug(url)
         async with self.session.get(url, headers=headers) as response:
             response.body = await response.text()
 
@@ -210,7 +211,8 @@ class Client:
             else:
                 query_string += f"&{param}={value}"
 
-        return query_string
+        # Finally we need to urlencode all the things
+        return urllib.parse.quote_plus(query_string)
 
     async def _post(self, url, data, headers=None):
         """Network request to post data to a server."""
@@ -223,6 +225,7 @@ class Client:
             else:
                 headers = {"Content-Type": "application/json"}
 
+            LOGGER.debug(url)
             async with self.session.post(url, headers=headers, json=data) as response:
                 response.body = await response.text()
 
@@ -264,7 +267,7 @@ class Client:
         self, handler="dataimport", max_retries=5, sleep_interval=60, **kwargs
     ):
         """Loop and check dataimport status until it is successful."""
-        LOGGER.info("Checking status of indexing...")
+        LOGGER.debug("Checking status of indexing...")
 
         status = False
         response_body = None
@@ -277,12 +280,12 @@ class Client:
                 solr_response = await self._get(url)
                 response_body = self._deserialize(solr_response)
                 if response_body.data["status"] == "idle":
-                    LOGGER.info("Indexing completed!")
+                    LOGGER.debug("Indexing completed!")
                     status = response_body.data["statusMessages"]
                     break
             except BaseException:  # pylint: disable=broad-except
                 # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
-                LOGGER.info("Status not ready yet, sleeping...")
+                LOGGER.debug("Status not ready yet, sleeping...")
 
             retries += 1
             await asyncio.sleep(sleep_interval)
@@ -293,7 +296,7 @@ class Client:
             and status is not False
             and retries < max_retries
         ):
-            LOGGER.info(status)
+            LOGGER.debug(status)
         else:
             msg = (
                 "Unable to verify dataimport success on %s after %s seconds and %s retries and "
@@ -346,21 +349,23 @@ class Client:
 
     async def close(self):
         """Close down Client Session."""
-        LOGGER.info("Closing Solr session connection...")
+        LOGGER.debug("Closing Solr session connection...")
         if self.session:
             await self.session.close()
 
     async def commit(self, handler="update", soft=False, **kwargs):
         """Perform a commit on the collection."""
-        LOGGER.info("Performing commit to Solr collection...")
         collection = self._get_collection(kwargs)
+        LOGGER.debug(
+            "Performing commit to Solr %s collection via %s handler...", collection, handler
+        )
         url = f"{self.base_url}/{collection}/{handler}?"
         url += "softCommit=true" if soft is True else "commit=true"
         return await self._get_check_ok_deserialize(url)
 
     async def dataimport(self, handler="dataimport", **kwargs):
         """Call a DIH (data import handler)."""
-        LOGGER.info("Calling dataimport handler...")
+        LOGGER.debug("Calling dataimport handler /%s...", handler)
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
@@ -369,8 +374,10 @@ class Client:
 
     async def get(self, _id, handler="get", **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
-        LOGGER.info("Getting document from Solr...")
         collection = self._get_collection(kwargs)
+        LOGGER.debug(
+            "Getting document from Solr collection %s via handler %s...", collection, handler
+        )
         url = f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
@@ -378,7 +385,7 @@ class Client:
     async def ping(self, handler="ping", action="status", **kwargs):
         """Use Solr's ping handler to check status of, enable, or disable a node."""
         assert action.lower() in ("status", "enable", "disable")
-        LOGGER.info("Pinging Solr...")
+        LOGGER.debug("Pinging Solr...")
         collection = self._get_collection(kwargs)
         url = (
             f"{self.base_url}/{collection}/{handler}"
@@ -388,7 +395,7 @@ class Client:
 
     async def setup(self):
         """Setup the ClientSession for use."""
-        LOGGER.info("Creating Solr session connection...")
+        LOGGER.debug("Creating Solr session connection...")
         self.session = aiohttp.ClientSession(
             connector=self.tcp_conn,
             # connector_owner=False,
@@ -402,12 +409,12 @@ class Client:
 
         Returns a tuple of response object and useful data or None if failure.
         """
-        LOGGER.info("Querying Solr suggestions handler...")
-
         if not query and not build:
             return SolrError("query or build required for suggestions.")
 
         collection = self._get_collection(kwargs)
+        LOGGER.debug("Querying Solr collection %s suggestions handler /%s...", collection, handler)
+
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         if query:
             url += f"&suggest.q={query}"
@@ -443,7 +450,7 @@ class Client:
         **kwargs,
     ):
         """Query a requestHandler of class SearchHandler."""
-        LOGGER.info("Querying Solr handler...")
+        LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
         if spellcheck:
@@ -481,8 +488,8 @@ class Client:
 
     async def update(self, data, handler="update", **kwargs):
         """Update a document using Solr's update handler."""
-        LOGGER.info("Updating data in Solr via handler...")
         collection = self._get_collection(kwargs)
+        LOGGER.debug("Updating %s data in Solr via %s handler...", collection, handler)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
         url += self._kwarg_to_query_string(kwargs)
 
