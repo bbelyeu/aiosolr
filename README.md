@@ -91,3 +91,16 @@ Once you are finished with the Solr instance, you should call the method *close*
 sessions like:
 
     await client.close()
+
+## Debugging
+
+To get more information from the Client you can initialize with `debug=True` like:
+
+    import aiosolr
+
+    client = aiosolr.Client(host=localhost, collection="example", port=8983, debug=True)
+
+This sets the `aiosolr` logger to debug level, and also sets the internally used HTTP session
+(provied by [AIOHTTP](https://docs.aiohttp.org/en/stable/logging.html)) to a debug level.
+
+This makes it easier to see the actual network request going to Solr.
