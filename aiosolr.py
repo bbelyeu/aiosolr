@@ -186,31 +186,34 @@ class Client:
         if "fq" in kwargs and isinstance(kwargs.get("fq"), list):
             fqs = kwargs.pop("fq")
             for _fq in fqs:
+                _fq = urllib.parse.quote_plus(str(_fq), encoding="utf8")
                 query_string += f"&fq={_fq}"
 
         # facet.field param accepted multiple times in URL query string
         if "facet.field" in kwargs and isinstance(kwargs.get("facet.field"), list):
             ffields = kwargs.pop("facet.field")
             for _ff in ffields:
+                _ff = urllib.parse.quote_plus(str(_ff), encoding="utf8")
                 query_string += f"&facet.field={_ff}"
 
         # boost param accepted multiple times in URL query string
         if "boost" in kwargs and isinstance(kwargs.get("boost"), list):
             boost_fields = kwargs.pop("boost")
             for _bf in boost_fields:
+                _bf = urllib.parse.quote_plus(str(_bf), encoding="utf8")
                 query_string += f"&boost={_bf}"
 
         for param, value in kwargs.items():
             if isinstance(value, list):
                 separator = "+" if param in ("qf",) else ","
-                clean_vals = [urllib.parse.quote_plus(i) for i in value]
+                clean_vals = [urllib.parse.quote_plus(str(i), encoding="utf8") for i in value]
                 query_string += "&{}={}".format(param, separator.join(clean_vals))
             elif isinstance(value, bool):
                 # using title cased bools results in the following error in Solr logs
                 # org.apache.solr.common.SolrException: invalid boolean value: False
                 query_string += f"&{param}=true" if value else f"&{param}=false"
             else:
-                clean_val = urllib.parse.quote_plus(value)
+                clean_val = urllib.parse.quote_plus(str(value), encoding="utf8")
                 query_string += f"&{param}={clean_val}"
 
         return query_string
@@ -348,7 +351,7 @@ class Client:
             query = Client._truncate_utf8(query, max_len)
 
         if urlencode:
-            query = urllib.parse.quote_plus(query)
+            query = urllib.parse.quote_plus(str(query), encoding="utf8")
 
         return query
 
