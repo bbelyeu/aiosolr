@@ -136,7 +136,7 @@ class Client:
 
     # TODO Make headers something other than a dictionary
     # pylint: disable=dangerous-default-value
-    async def _get(self, url, headers={}):
+    async def _get(self, url, *, body={}, headers={}):
         """Network request to get data from a server."""
         if "Content-Type" not in headers and self.response_writer == "json":
             headers["Content-Type"] = "application/json"
@@ -145,16 +145,21 @@ class Client:
             await self.setup()
 
         LOGGER.debug(url)
-        async with self.session.get(url, headers=headers) as response:
-            response.body = await response.text()
+        if body:
+            LOGGER.debug(body)
+            async with self.session.request("GET", url, headers=headers, json=body) as response:
+                response.body = await response.text()
+        else:
+            async with self.session.get(url, headers=headers) as response:
+                response.body = await response.text()
 
         return response
 
     # TODO Make headers something other than a dictionary
     # pylint: disable=dangerous-default-value
-    async def _get_check_ok_deserialize(self, url, headers={}):
+    async def _get_check_ok_deserialize(self, url, *, body={}, headers={}):
         """Get url, check status 200 and return deserialized data."""
-        response = await self._get(url, headers)
+        response = await self._get(url, body=body, headers=headers)
 
         if response.status != 200:
             msg, trace = None, None
@@ -172,11 +177,19 @@ class Client:
 
     def _get_collection(self, kwargs):
         """Get the collection name from the kwargs or instance variable."""
-        if not kwargs.get("collection") and not self.collection:
-            raise SolrError("Collection name not provided.")
-        return kwargs.get("collection") or self.collection
+        if "collection" in kwargs:
+            return kwargs.pop("collection")
+        if self.collection:
+            return self.collection
+        raise SolrError("Collection name not provided.")
 
-    def _kwarg_to_query_string(self, kwargs):  # pylint: disable=no-self-use
+    @staticmethod
+    def _kwargs_to_json_body(kwargs):
+        """Convert kwarg arguments to GET body for JSON Request API."""
+        return {"params": kwargs}
+
+    @staticmethod
+    def _kwargs_to_query_string(kwargs):
         """Convert kwarg arguments to Solr query string."""
         # TODO Think about if I should validate any query params in kwargs?
         query_string = ""
@@ -320,10 +333,10 @@ class Client:
         allow_http=False,
         allow_wildcard=False,
         escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
-        max_len=200,
+        max_len=0,
         # regex of chars to remove
         remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
-        urlencode=True,
+        urlencode=False,
     ):
         """Typical query cleaning."""
         if not allow_http:
@@ -376,7 +389,7 @@ class Client:
         LOGGER.debug("Calling dataimport handler /%s...", handler)
         collection = self._get_collection(kwargs)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
-        url += self._kwarg_to_query_string(kwargs)
+        url += self._kwargs_to_query_string(kwargs)
         solr_response = await self._get(url)
         return self._deserialize(solr_response)
 
@@ -387,7 +400,7 @@ class Client:
             "Getting document from Solr collection %s via handler %s...", collection, handler
         )
         url = f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
-        url += self._kwarg_to_query_string(kwargs)
+        url += self._kwargs_to_query_string(kwargs)
         return await self._get_check_ok_deserialize(url)
 
     async def ping(self, handler="ping", action="status", **kwargs):
@@ -448,49 +461,48 @@ class Client:
 
         return response, suggestions
 
-    async def query(
-        self,
-        handler="select",
-        prefer_local=False,
-        query="*",
-        spellcheck=False,
-        spellcheck_dicts=[],
-        **kwargs,
-    ):
+    async def query(self, *, handler="select", **kwargs):
         """Query a requestHandler of class SearchHandler."""
         LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
-        url = f"{self.base_url}/{collection}/{handler}?q={query}&wt={self.response_writer}"
-        if spellcheck:
-            url += "&spellcheck=true"
 
-            # Docs state the default SpellingQueryConverter class only handles ASCII so we
-            # need to specify spellcheck.q for Unicode support
-            # https://lucene.apache.org/solr/guide/8_6/spell-checking.html
-            if "spellcheck.q" not in kwargs:
-                url += f"&spellcheck.q={query}"
+        if "q" not in kwargs:
+            if "query" not in kwargs:
+                kwargs["q"] = "*"
+            else:
+                kwargs["q"] = kwargs.pop("query")
 
-            for spellcheck_dict in spellcheck_dicts:
-                # Solr allows the same url query param multiple times... go figure?
-                url += f"&spellcheck.dictionary={spellcheck_dict}"
+        if self.response_writer == "json":
+            url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
 
-        if prefer_local:
-            url += "&shards.preference=replica.location:local"
+            if kwargs.get("spellcheck"):
+                # Docs state the default SpellingQueryConverter class only handles ASCII so we
+                # need to specify spellcheck.q for Unicode support
+                # https://lucene.apache.org/solr/guide/8_6/spell-checking.html
+                kwargs["spellcheck.q"] = kwargs["q"]
+                if "spellcheck_dicts" in kwargs and "spellcheck.dictionary" not in kwargs:
+                    kwargs["spellcheck.dictionary"] = kwargs.pop("spellcheck_dicts", [])
 
-        url += self._kwarg_to_query_string(kwargs)
+            if "prefer_local" in kwargs:
+                kwargs.pop("prefer_local")
+                url += "&shards.preference=replica.location:local"
 
-        solr_response = await self._get(url)
-        if solr_response.status != 200:
-            msg, trace = None, None
-            try:
-                error = self._deserialize(solr_response)
-                msg = error.data.get("error", {}).get("msg", error)
-                trace = error.data.get("error", {}).get("trace")
-            except BaseException:  # pylint: disable=broad-except
-                # TODO Figure out all the possible exceptions and catch them instead of BaseExcept
-                msg = str(solr_response.body)
+            body = self._kwargs_to_json_body(kwargs)
 
-            raise SolrError(msg, trace)
+            solr_response = await self._get(url, body=body)
+            if solr_response.status != 200:
+                msg, trace = None, None
+                try:
+                    error = self._deserialize(solr_response)
+                    msg = error.data.get("error", {}).get("msg", error)
+                    trace = error.data.get("error", {}).get("trace")
+                except BaseException:  # pylint: disable=broad-except
+                    # TODO Figure out all the possible exceptions and catch them instead of Base
+                    msg = str(solr_response.body)
+
+                raise SolrError(msg, trace)
+        else:
+            raise SolrError("Non json responses not yet supported.")
 
         return self._deserialize(solr_response)
 
@@ -499,7 +511,7 @@ class Client:
         collection = self._get_collection(kwargs)
         LOGGER.debug("Updating %s data in Solr via %s handler...", collection, handler)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
-        url += self._kwarg_to_query_string(kwargs)
+        url += self._kwargs_to_query_string(kwargs)
 
         response = await self._post(url, data)
         if response.status == 200:
