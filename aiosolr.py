@@ -138,15 +138,17 @@ class Client:
     # pylint: disable=dangerous-default-value
     async def _get(self, url, *, body={}, headers={}):
         """Network request to get data from a server."""
-        if "Content-Type" not in headers and self.response_writer == "json":
-            headers["Content-Type"] = "application/json"
+        if "Accept" not in headers and self.response_writer == "json":
+            headers["Accept"] = "application/json"
 
         if not self.session:
             await self.setup()
 
         LOGGER.debug(url)
+        LOGGER.debug(headers)
         if body:
             LOGGER.debug(body)
+            headers["Content-Type"] = "application/json"
             async with self.session.request("GET", url, headers=headers, json=body) as response:
                 response.body = await response.text()
         else:
