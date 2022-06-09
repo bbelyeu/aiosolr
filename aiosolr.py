@@ -149,7 +149,7 @@ class Client:
         if body:
             LOGGER.debug(body)
             headers["Content-Type"] = "application/json"
-            async with self.session.request("GET", url, headers=headers, json=body) as response:
+            async with self.session.request("POST", url, headers=headers, json=body) as response:
                 response.body = await response.text()
         else:
             async with self.session.get(url, headers=headers) as response:
