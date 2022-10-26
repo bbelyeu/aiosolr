@@ -468,7 +468,7 @@ class Client:
         LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
 
-        if "q" not in kwargs:
+        if "handler" == "select" and "q" not in kwargs:
             if "query" not in kwargs:
                 kwargs["q"] = "*"
             else:
@@ -489,9 +489,13 @@ class Client:
                 kwargs.pop("prefer_local")
                 url += "&shards.preference=replica.location:local"
 
-            body = self._kwargs_to_json_body(kwargs)
+            if handler == "select":
+                body = self._kwargs_to_json_body(kwargs)
+                solr_response = await self._get(url, body=body)
+            else:  # mlt handler and some others don't support params in body
+                url += self._kwargs_to_query_string(kwargs)
+                solr_response = await self._get(url)
 
-            solr_response = await self._get(url, body=body)
             if solr_response.status != 200:
                 msg, trace = None, None
                 try:
