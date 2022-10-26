@@ -468,7 +468,7 @@ class Client:
         LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
 
-        if "handler" == "select" and "q" not in kwargs:
+        if "handler" in ("select", "mlt", "query") and "q" not in kwargs:
             if "query" not in kwargs:
                 kwargs["q"] = "*"
             else:
