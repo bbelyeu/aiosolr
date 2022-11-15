@@ -117,9 +117,8 @@ class Client:
             self.timeout = aiohttp.ClientTimeout(total=timeout)
 
         self.session = None
-        # How long to cache DNS lookups - defaulting to an hour
-        self.tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=ttl_dns_cache)
         self.trace_configs = trace_configs
+        self.ttl_dns_cache = ttl_dns_cache
 
         if debug:
             LOGGER.setLevel(logging.DEBUG)
@@ -419,9 +418,9 @@ class Client:
     async def setup(self):
         """Setup the ClientSession for use."""
         LOGGER.debug("Creating Solr session connection...")
+        tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=self.ttl_dns_cache)
         self.session = aiohttp.ClientSession(
-            connector=self.tcp_conn,
-            # connector_owner=False,
+            connector=tcp_conn,
             timeout=self.timeout,
             trace_configs=self.trace_configs,
         )
