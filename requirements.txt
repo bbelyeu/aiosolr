@@ -20,6 +20,8 @@ bleach==4.1.0
     # via readme-renderer
 certifi==2021.10.8
     # via requests
+cffi==1.15.1
+    # via cryptography
 charset-normalizer==2.0.10
     # via
     #   aiohttp
@@ -30,6 +32,8 @@ click==8.0.3
     #   pip-tools
 colorama==0.4.4
     # via twine
+cryptography==38.0.4
+    # via secretstorage
 docutils==0.18.1
     # via readme-renderer
 fancycompleter==0.9.1
@@ -50,6 +54,10 @@ isort==5.10.1
     # via pylint
 jedi==0.18.1
     # via pudb
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==23.5.0
     # via twine
 lazy-object-proxy==1.7.1
@@ -84,6 +92,8 @@ platformdirs==2.4.1
     #   pylint
 pudb==2022.1
     # via -r requirements.in
+pycparser==2.21
+    # via cffi
 pygments==2.11.2
     # via
     #   pdbpp
@@ -97,14 +107,16 @@ pyrepl==0.9.0
     # via fancycompleter
 readme-renderer==32.0
     # via twine
-requests-toolbelt==0.9.1
-    # via twine
 requests==2.27.1
     # via
     #   requests-toolbelt
     #   twine
+requests-toolbelt==0.9.1
+    # via twine
 rfc3986==2.0.0
     # via twine
+secretstorage==3.3.3
+    # via keyring
 six==1.16.0
     # via bleach
 toml==0.10.2
@@ -118,21 +130,18 @@ tqdm==4.62.3
 twine==3.7.1
     # via -r requirements.in
 typing-extensions==4.0.1
-    # via
-    #   astroid
-    #   black
-    #   pylint
+    # via black
 urllib3==1.26.8
     # via requests
-urwid-readline==0.13
-    # via pudb
 urwid==2.1.2
     # via
     #   pudb
     #   urwid-readline
+urwid-readline==0.13
+    # via pudb
 webencodings==0.5.1
     # via bleach
-wheel==0.37.1
+wheel==0.38.1
     # via
     #   -r requirements.in
     #   pip-tools
