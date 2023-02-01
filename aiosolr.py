@@ -219,7 +219,17 @@ class Client:
 
         for param, value in kwargs.items():
             if isinstance(value, list):
-                separator = "+" if param in ("qf",) else ","
+                separator = (
+                    "+"
+                    if param
+                    in (
+                        "pf",
+                        "pf2",
+                        "pf3",
+                        "qf",
+                    )
+                    else ","
+                )
                 clean_vals = [urllib.parse.quote_plus(str(i), encoding="utf8") for i in value]
                 query_string += "&{}={}".format(param, separator.join(clean_vals))
             elif isinstance(value, bool):
