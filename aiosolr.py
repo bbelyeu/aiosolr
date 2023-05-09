@@ -37,6 +37,7 @@ class Response:
         self.data = data
         self.doc = {}
         self.docs = []
+        self.grouped = []
         self.more_like_this = []
         self.status = status
         self.spelling_suggestions = []
@@ -46,6 +47,7 @@ class Response:
             response = data.get("response", {})
             if response:
                 self.docs = response.get("docs", [])
+            self.grouped = data.get("grouped", {})
             mlt_data = data.get("moreLikeThis", {})
 
             if mlt_data:
@@ -461,7 +463,6 @@ class Client:
                 query = query.replace("+", " ")
 
             for name in response.data["suggest"].keys():
-
                 try:
                     suggestions += [
                         {"match": s["term"], "payload": s["payload"]}
