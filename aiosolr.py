@@ -522,11 +522,13 @@ class Client:
 
         return self._deserialize(solr_response)
 
-    async def update(self, data, handler="update", **kwargs):
+    async def update(self, data, handler="update", overwrite=True, **kwargs):
         """Update a document using Solr's update handler."""
         collection = self._get_collection(kwargs)
         LOGGER.debug("Updating %s data in Solr via %s handler...", collection, handler)
         url = f"{self.base_url}/{collection}/{handler}?wt={self.response_writer}"
+        if overwrite:
+            url += "&overwrite=true"
         url += self._kwargs_to_query_string(kwargs)
 
         response = await self._post(url, data)
