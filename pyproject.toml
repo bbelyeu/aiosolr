@@ -22,11 +22,12 @@ exclude = '''
 
 [tool.pytest.ini_options]
 addopts = "-svx --cov=."
+asyncio_mode = "auto"
 testpaths = [
     "tests",
 ]
 
 [tool.coverage.run]
-omit =["tests/*", "*generated*", "resolver.py"]
+omit =["tests/*"]
 [tool.coverage.report]
-omit =["tests/*", "*generated*", "resolver.py"]
+omit =["tests/*"]

@@ -1,8 +1,11 @@
 aiohttp
 black
+bleach
 pdbpp
 pip_and_pip_tools
 pudb
 pylint
+pytest
+pytest-cov
 twine
 wheel
