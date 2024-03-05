@@ -23,11 +23,14 @@ black:
 
 deps-install:
 	@echo "> installing dependencies..."
+	@pip install --upgrade pip_and_pip_tools
 	@pip-sync
 
 deps-update:
 	@echo "> updating dependencies..."
+	@pip install --upgrade pip_and_pip_tools
 	@pip-compile --upgrade --no-emit-trusted-host --no-emit-index-url requirements.in
+	@pip-sync
 
 githooks:
 	@echo "> Creating githooks path in git config..."
@@ -47,3 +50,11 @@ pylint:
 	@echo "> running pylint..."
 	@pylint --rcfile=.pylintrc aiosolr.py
 	@echo "pylint looks good!"
+
+venv:
+	pyenv install 3.11 --skip-existing
+	-pyenv uninstall -f aiosolr
+	-pyenv virtualenv 3.11 aiosolr
+	pyenv local aiosolr
+	pip install --upgrade pip_and_pip_tools
+	make deps-install

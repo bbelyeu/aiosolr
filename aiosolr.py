@@ -233,6 +233,7 @@ class Client:
                     else ","
                 )
                 clean_vals = [urllib.parse.quote_plus(str(i), encoding="utf8") for i in value]
+                # pylint: disable=consider-using-f-string
                 query_string += "&{}={}".format(param, separator.join(clean_vals))
             elif isinstance(value, bool):
                 # using title cased bools results in the following error in Solr logs
@@ -345,10 +346,10 @@ class Client:
         allow_html_tags=False,
         allow_http=False,
         allow_wildcard=False,
-        escape_chars=(":", r"\:"),  # tuple of (replace_me, replace_with)
+        find_and_replace=((":", r"\:"), ("|", " ")),  # tuple of tuples (find_me, replace_with)
         max_len=0,
         # regex of chars to remove
-        remove_chars=r'[\&\|\!\(\)\{\}\[\]\^"~\?\\;]',
+        remove_chars=r'[\"\&\!\(\)\{\}\[\]\^"~\?\\;#,]',
         urlencode=False,
     ):
         """Typical query cleaning."""
@@ -363,9 +364,9 @@ class Client:
             # Also remove urlencoded wildcard (*)
             query = query.replace("%2a", "")
 
-        if escape_chars:
-            # Escape these chars
-            query = re.sub(escape_chars[0], escape_chars[1], query)
+        if find_and_replace:
+            for find, replace in find_and_replace:
+                query = query.replace(find, replace)
 
         if not allow_html_tags:
             # bleach it to prevent JS injection or other unwanted html
