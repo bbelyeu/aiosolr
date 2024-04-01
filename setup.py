@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+
 """Lightweight Python client for Apache Solr."""
+
 import sys
 
 from setuptools import setup
@@ -7,7 +9,7 @@ from setuptools import setup
 if sys.version_info < (3, 7):
     sys.exit("Sorry, Python < 3.7 is not supported")
 
-__version__ = "4.4.0"
+__version__ = "5.0.0"
 
 setup(
     name="aiosolr",
@@ -31,7 +33,7 @@ setup(
     long_description_content_type="text/markdown",
     platforms="any",
     py_modules=["aiosolr"],
-    python_requires=">3.7.0",
+    python_requires=">=3.7.0",
     test_suite="tests",
     url="https://github.com/bbelyeu/aiosolr/",
 )
