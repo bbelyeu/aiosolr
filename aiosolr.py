@@ -11,6 +11,7 @@ import json
 import logging
 import re
 import urllib.parse
+from typing import TYPE_CHECKING
 
 import aiohttp
 import bleach
@@ -76,20 +77,22 @@ class Response:
 
 
 # TODO Support something other than JSON
-class Client:
+class Client:  # pylint: disable=too-many-instance-attributes
     """Class representing a client connection to Solr."""
 
-    def __init__(  # pylint: disable=dangerous-default-value
+    def __init__(
         self,
         *,
         collection="",
-        connection_url=None,
+        connection_url: str | None = None,
         debug=False,
         host="127.0.0.1",
         port="80",
         scheme="http",
-        timeout=(1, 3),
-        trace_configs=[],
+        read_timeout: int | None = None,
+        write_timeout: int | None = None,
+        client_timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(sock_connect=1, sock_read=3),
+        trace_configs: list[aiohttp.TraceConfig] | None = None,
         ttl_dns_cache=3600,
     ):
         """Init to instantiate Solr class.
@@ -109,18 +112,18 @@ class Client:
             self.collection = collection or None
 
         self.response_writer = "json"
-        if isinstance(timeout, tuple):
-            # In some cases you may want to set the
-            # connection timeout to 4 b/c of the TCP packet retransmission window
-            # http://docs.python-requests.org/en/master/user/advanced/#timeouts
-            # But in many cases that will be too slow
-            self.timeout = aiohttp.ClientTimeout(sock_connect=timeout[0], sock_read=timeout[1])
-        else:
-            self.timeout = aiohttp.ClientTimeout(total=timeout)
+        # In some cases you may want to set the
+        # connection timeout to 4 b/c of the TCP packet retransmission window
+        # http://docs.python-requests.org/en/master/user/advanced/#timeouts
+        # But in many cases that will be too slow
+        self.client_timeout = client_timeout
 
         self.session = None
         self.trace_configs = trace_configs
         self.ttl_dns_cache = ttl_dns_cache
+
+        self.read_timeout = read_timeout
+        self.write_timeout = write_timeout
 
         if debug:
             LOGGER.setLevel(logging.DEBUG)
@@ -144,13 +147,15 @@ class Client:
 
         if not self.session:
             await self.setup()
+            if TYPE_CHECKING:
+                assert self.session
 
         LOGGER.debug(url)
         LOGGER.debug(headers)
         if body:
             LOGGER.debug(body)
             headers["Content-Type"] = "application/json"
-            async with self.session.request("POST", url, headers=headers, json=body) as response:
+            async with self.session.post(url, headers=headers, json=body) as response:
                 response.body = await response.text()
         else:
             async with self.session.get(url, headers=headers) as response:
@@ -249,6 +254,8 @@ class Client:
         """Network request to post data to a server."""
         if not self.session:
             await self.setup()
+            if TYPE_CHECKING:
+                assert self.session
 
         if isinstance(data, (dict, list)):
             if headers:
@@ -346,7 +353,10 @@ class Client:
         allow_html_tags=False,
         allow_http=False,
         allow_wildcard=False,
-        find_and_replace=((":", r"\:"), ("|", " ")),  # tuple of tuples (find_me, replace_with)
+        find_and_replace: tuple[tuple[str, str]] = (
+            (":", r"\:"),
+            ("|", " "),
+        ),  # tuple of tuples (find_me, replace_with)
         max_len=0,
         # regex of chars to remove
         remove_chars=r'[\"\&\!\(\)\{\}\[\]\^"~\?\\;#,]',
@@ -407,7 +417,7 @@ class Client:
         solr_response = await self._get(url)
         return self._deserialize(solr_response)
 
-    async def get(self, _id, handler="get", **kwargs):
+    async def get(self, _id, handler="get", read_timeout: int | None = None, **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
         collection = self._get_collection(kwargs)
         LOGGER.debug(
@@ -415,7 +425,10 @@ class Client:
         )
         url = f"{self.base_url}/{collection}/{handler}?id={_id}&wt={self.response_writer}"
         url += self._kwargs_to_query_string(kwargs)
-        return await self._get_check_ok_deserialize(url)
+        return await asyncio.wait_for(
+            self._get_check_ok_deserialize(url),
+            read_timeout if read_timeout is not None else self.read_timeout,
+        )
 
     async def ping(self, handler="ping", action="status", **kwargs):
         """Use Solr's ping handler to check status of, enable, or disable a node."""
@@ -434,7 +447,7 @@ class Client:
         tcp_conn = aiohttp.TCPConnector(ttl_dns_cache=self.ttl_dns_cache)
         self.session = aiohttp.ClientSession(
             connector=tcp_conn,
-            timeout=self.timeout,
+            timeout=self.client_timeout,
             trace_configs=self.trace_configs,
         )
 
@@ -474,7 +487,7 @@ class Client:
 
         return response, suggestions
 
-    async def query(self, *, handler="select", **kwargs):
+    async def query(self, *, handler="select", read_timeout: int | None = None, **kwargs):
         """Query a requestHandler of class SearchHandler."""
         LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
@@ -502,10 +515,16 @@ class Client:
 
             if handler == "select":
                 body = self._kwargs_to_json_body(kwargs)
-                solr_response = await self._get(url, body=body)
+                solr_response = await asyncio.wait_for(
+                    self._get(url, body=body),
+                    read_timeout if read_timeout is not None else self.read_timeout,
+                )
             else:  # mlt handler and some others don't support params in body
                 url += self._kwargs_to_query_string(kwargs)
-                solr_response = await self._get(url)
+                solr_response = await asyncio.wait_for(
+                    self._get(url),
+                    read_timeout if read_timeout is not None else self.read_timeout,
+                )
 
             if solr_response.status != 200:
                 msg, trace = None, None
@@ -523,7 +542,14 @@ class Client:
 
         return self._deserialize(solr_response)
 
-    async def update(self, data, handler="update", overwrite=True, **kwargs):
+    async def update(
+        self,
+        data,
+        handler="update",
+        overwrite=True,
+        write_timeout: int | None = None,
+        **kwargs,
+    ):
         """Update a document using Solr's update handler."""
         collection = self._get_collection(kwargs)
         LOGGER.debug("Updating %s data in Solr via %s handler...", collection, handler)
@@ -532,7 +558,10 @@ class Client:
             url += "&overwrite=true"
         url += self._kwargs_to_query_string(kwargs)
 
-        response = await self._post(url, data)
+        response = await asyncio.wait_for(
+            self._post(url, data),
+            write_timeout if write_timeout is not None else self.write_timeout,
+        )
         if response.status == 200:
             data = self._deserialize(response)
         else:
