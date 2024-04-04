@@ -1,5 +1,5 @@
 """
-AsyncIO Python client for Apache Solr
+Lightweight AsyncIO Python client for Apache Solr
 
 The idea behind this module is to provide easy access to Solr in an efficient manner.
 This is achieved through using AIOHTTP client sessions with shared connection pooling.
@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 import bleach
+
+__version__ = "5.0.0"
 
 LOGGER = logging.getLogger("aiosolr")
 

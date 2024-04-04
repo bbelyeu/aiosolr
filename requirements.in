@@ -1,6 +1,7 @@
 aiohttp
 black
 bleach
+flit
 pdbpp
 pip_and_pip_tools
 pudb

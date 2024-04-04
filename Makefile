@@ -45,6 +45,9 @@ isort:
 
 lint: black isort pylint
 
+publish:
+	@python -m flit publish
+
 pylint:
 	@pylint --help > /dev/null || (echo "Error: pylint not found"; exit 1)
 	@echo "> running pylint..."
