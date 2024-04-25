@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 import aiohttp
 import bleach
 
-__version__ = "5.0.0"
+__version__ = "5.0.1"
 
 LOGGER = logging.getLogger("aiosolr")
 
