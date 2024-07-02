@@ -10,13 +10,14 @@ import asyncio
 import json
 import logging
 import re
+import typing
 import urllib.parse
 from typing import TYPE_CHECKING
 
 import aiohttp
 import bleach
 
-__version__ = "5.0.1"
+__version__ = "5.0.2"
 
 LOGGER = logging.getLogger("aiosolr")
 
@@ -86,15 +87,15 @@ class Client:  # pylint: disable=too-many-instance-attributes
         self,
         *,
         collection="",
-        connection_url: str | None = None,
+        connection_url: typing.Optional[str] = None,
         debug=False,
         host="127.0.0.1",
         port="80",
         scheme="http",
-        read_timeout: int | None = None,
-        write_timeout: int | None = None,
+        read_timeout: typing.Optional[int] = None,
+        write_timeout: typing.Optional[int] = None,
         client_timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(sock_connect=1, sock_read=3),
-        trace_configs: list[aiohttp.TraceConfig] | None = None,
+        trace_configs: typing.Optional[list[aiohttp.TraceConfig]] = None,
         ttl_dns_cache=3600,
     ):
         """Init to instantiate Solr class.
@@ -419,7 +420,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
         solr_response = await self._get(url)
         return self._deserialize(solr_response)
 
-    async def get(self, _id, handler="get", read_timeout: int | None = None, **kwargs):
+    async def get(self, _id, handler="get", read_timeout: typing.Optional[int] = None, **kwargs):
         """Use Solr's built-in get handler to retrieve a single document by id."""
         collection = self._get_collection(kwargs)
         LOGGER.debug(
@@ -489,7 +490,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
         return response, suggestions
 
-    async def query(self, *, handler="select", read_timeout: int | None = None, **kwargs):
+    async def query(self, *, handler="select", read_timeout: typing.Optional[int] = None, **kwargs):
         """Query a requestHandler of class SearchHandler."""
         LOGGER.debug("Querying Solr %s handler...", handler)
         collection = self._get_collection(kwargs)
@@ -549,7 +550,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
         data,
         handler="update",
         overwrite=True,
-        write_timeout: int | None = None,
+        write_timeout: typing.Optional[int] = None,
         **kwargs,
     ):
         """Update a document using Solr's update handler."""
