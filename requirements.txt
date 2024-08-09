@@ -4,7 +4,9 @@
 #
 #    pip-compile --no-emit-index-url --no-emit-trusted-host requirements.in
 #
-aiohttp==3.9.5
+aiohappyeyeballs==2.3.5
+    # via aiohttp
+aiohttp==3.10.2
     # via -r requirements.in
 aiosignal==1.3.1
     # via aiohttp
@@ -24,6 +26,8 @@ build==1.2.1
     # via pip-tools
 certifi==2024.6.2
     # via requests
+cffi==1.17.0
+    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -32,6 +36,8 @@ click==8.1.7
     #   pip-tools
 coverage[toml]==7.5.4
     # via pytest-cov
+cryptography==43.0.0
+    # via secretstorage
 dill==0.3.8
     # via pylint
 docutils==0.21.2
@@ -68,6 +74,10 @@ jaraco-functools==4.0.1
     # via keyring
 jedi==0.19.1
     # via pudb
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==25.2.1
     # via twine
 markdown-it-py==3.0.0
@@ -114,6 +124,8 @@ pluggy==1.5.0
     # via pytest
 pudb==2024.1
     # via -r requirements.in
+pycparser==2.22
+    # via cffi
 pygments==2.18.0
     # via
     #   pdbpp
@@ -147,6 +159,8 @@ rfc3986==2.0.0
     # via twine
 rich==13.7.1
     # via twine
+secretstorage==3.3.3
+    # via keyring
 six==1.16.0
     # via bleach
 tomli-w==1.0.0
